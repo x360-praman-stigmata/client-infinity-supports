@@ -136,7 +136,7 @@ export default function SuperChoiceFormEdit({
       <SuperChoiceForm
         initialData={localFormData}
         onDataChange={handleDataChange}
-        readOnly={readOnly}
+        readOnly={false}
         showButtons={false}
       />
       {!readOnly && (

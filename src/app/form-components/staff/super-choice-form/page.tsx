@@ -221,10 +221,10 @@ const DateInput = ({
   monthLeft: number;
   yearTop: number;
   yearLeft: number;
-  separator1Top: number;
-  separator1Left: number;
-  separator2Top: number;
-  separator2Left: number;
+  separator1Top?: number;
+  separator1Left?: number;
+  separator2Top?: number;
+  separator2Left?: number;
   readOnly?: boolean;
 }) => {
   const handleChange = (field: 'day' | 'month' | 'year', val: string) => {
@@ -262,13 +262,15 @@ const DateInput = ({
         </div>
       </div>
       
-      {/* First Separator */}
-      <span 
-        className="absolute text-sm text-black" 
-        style={{ top: separator1Top, left: separator1Left }}
-      >
-        /
-      </span>
+      {/* First Separator - only if provided */}
+      {separator1Top !== undefined && separator1Left !== undefined && (
+        <span 
+          className="absolute text-sm text-black" 
+          style={{ top: separator1Top, left: separator1Left }}
+        >
+          /
+        </span>
+      )}
       
       {/* Month - 2 boxes */}
       <div className="absolute" style={{ top: monthTop, left: monthLeft }}>
@@ -299,13 +301,15 @@ const DateInput = ({
         </div>
       </div>
       
-      {/* Second Separator */}
-      <span 
-        className="absolute text-sm text-black" 
-        style={{ top: separator2Top, left: separator2Left }}
-      >
-        /
-      </span>
+      {/* Second Separator - only if provided */}
+      {separator2Top !== undefined && separator2Left !== undefined && (
+        <span 
+          className="absolute text-sm text-black" 
+          style={{ top: separator2Top, left: separator2Left }}
+        >
+          /
+        </span>
+      )}
       
       {/* Year - 4 boxes */}
       <div className="absolute" style={{ top: yearTop, left: yearLeft }}>
@@ -614,7 +618,6 @@ export default function SuperChoiceForm({
         monthLeft={708}
         yearTop={965}
         yearLeft={771}
-        
         readOnly={readOnly}
       />
     </div>
@@ -705,7 +708,6 @@ export default function SuperChoiceForm({
         monthLeft={706}
         yearTop={792}
         yearLeft={770}
-
         readOnly={readOnly}
       />
     </div>
@@ -808,7 +810,7 @@ export default function SuperChoiceForm({
       <DateInput
         value={sectionDDate}
         onChange={setSectionDDate}
-       dayTop={873}
+        dayTop={873}
         dayLeft={640}
         monthTop={873}
         monthLeft={708}

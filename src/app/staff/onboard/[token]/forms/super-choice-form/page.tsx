@@ -15,29 +15,22 @@ export default function SuperChoiceFormPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load staff data
-        const staffResponse = await fetch(`/api/staff/onboard/${token}`);
-        if (staffResponse.ok) {
-          const staffData = await staffResponse.json();
-          setStaff(staffData);
-        }
-
-        // Load existing form data
-        const formResponse = await fetch(`/api/forms/submission?token=${token}&formType=super_choice_form`);
-        if (formResponse.ok) {
-          const formData = await formResponse.json();
-          setFormData(formData.data || {});
-        }
-      } catch (error) {
+        const res = await fetch(`/api/staff/onboard/${token}`);
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error);
+        
+        setStaff(data.staff);
+        setFormData(data.submissions['super_choice_form'] || {});
+      } catch (error: any) {
         console.error('Error loading data:', error);
+        alert(error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    if (token) {
-      loadData();
-    }
+    if (token) loadData();
   }, [token]);
 
   useEffect(() => {
@@ -47,29 +40,22 @@ export default function SuperChoiceFormPage() {
   const handleSave = async (isSubmit: boolean) => {
     setSaving(true);
     try {
-      const response = await fetch('/api/forms/submission', {
+      const res = await fetch(`/api/staff/onboard/${token}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          formType: 'super_choice_form',
-          data: formData,
-          isSubmit,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formKey: 'super_choice_form', data: formData, submit: isSubmit }),
       });
-
-      if (response.ok) {
-        if (isSubmit) {
-          // Navigate to next form or completion page
-          router.push(`/staff/onboard/${token}`);
-        }
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || 'Failed to save');
+      
+      if (isSubmit) {
+        router.push(`/staff/onboard/${token}`);
       } else {
-        console.error('Failed to save form');
+        alert('Draft saved successfully!');
       }
-    } catch (error) {
-      console.error('Error saving form:', error);
+    } catch (error: any) {
+      console.error('Error saving:', error);
+      alert(error.message);
     } finally {
       setSaving(false);
     }
@@ -124,6 +110,7 @@ export default function SuperChoiceFormPage() {
             <SuperChoiceFormView
               initialData={formData}
               onDataChange={setFormData}
+              readOnly={false}
               showButtons={false}
             />
           </div>
