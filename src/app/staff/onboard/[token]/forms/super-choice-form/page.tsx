@@ -1,8 +1,9 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getStaffFormComponent } from '@/app/forms/staff-registry';
+import { toast } from 'react-hot-toast';
 
 export default function SuperChoiceFormPage() {
   const { token } = useParams<{ token: string }>();
@@ -12,6 +13,7 @@ export default function SuperChoiceFormPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const validateFormRef = useRef<(() => { isValid: boolean; errors: string[] }) | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -38,53 +40,48 @@ export default function SuperChoiceFormPage() {
     console.log("formData: ", formData);
   }, [formData]);
 
+  const handleValidationChange = (validationFn: () => { isValid: boolean; errors: string[] }) => {
+    console.log('Validation function received:', validationFn); // Debug log
+    validateFormRef.current = validationFn;
+  };
+
   const validateForm = () => {
-    const errors: string[] = [];
-    
-    // Required fields for all forms
-    if (!formData.fullName?.trim()) {
-      errors.push('Full name is required');
+    console.log('validateForm called, ref available:', !!validateFormRef.current); // Debug log
+    if (validateFormRef.current) {
+      const result = validateFormRef.current();
+      console.log('Validation result from form component:', result); // Debug log
+      return result;
     }
-    if (!formData.tfn?.trim()) {
-      errors.push('Tax File Number is required');
-    }
-    if (!formData.fundChoice) {
-      errors.push('Please select a fund choice');
-    }
-    
-    // Conditional validation based on fund choice
-    if (formData.fundChoice === 'existing') {
-      if (!formData.superFundName?.trim()) errors.push('Super fund name is required');
-      if (!formData.superFundABN?.trim()) errors.push('Super fund ABN is required');
-      if (!formData.superFundUSI?.trim()) errors.push('Super fund USI is required');
-      if (!formData.memberAccountNumber?.trim()) errors.push('Member account number is required');
-      if (!formData.accountName?.trim()) errors.push('Account name is required');
-    } else if (formData.fundChoice === 'default') {
-      if (!formData.businessName?.trim()) errors.push('Business name is required');
-      if (!formData.businessABN?.trim()) errors.push('Business ABN is required');
-      if (!formData.defaultSuperFundName?.trim()) errors.push('Default super fund name is required');
-      if (!formData.defaultSuperFundABN?.trim()) errors.push('Default super fund ABN is required');
-      if (!formData.defaultSuperFundUSI?.trim()) errors.push('Default super fund USI is required');
-    } else if (formData.fundChoice === 'smsf') {
-      if (!formData.smsfName?.trim()) errors.push('SMSF name is required');
-      if (!formData.smsfABN?.trim()) errors.push('SMSF ABN is required');
-      if (!formData.smsfESA?.trim()) errors.push('SMSF ESA is required');
-      if (!formData.smsfAccountName?.trim()) errors.push('SMSF account name is required');
-      if (!formData.bankAccountName?.trim()) errors.push('Bank account name is required');
-      if (!formData.bsbCode?.trim()) errors.push('BSB code is required');
-      if (!formData.accountNumber?.trim()) errors.push('Account number is required');
-    }
-    
-    return errors;
+    console.log('Validation function not available'); // Debug log
+    return { isValid: false, errors: ['Validation function not available'] };
   };
 
   const handleSave = async (isSubmit: boolean) => {
     // Validate form if submitting
     if (isSubmit) {
-      const errors = validateForm();
-      if (errors.length > 0) {
-        alert('Please fix the following errors:\n• ' + errors.join('\n• '));
-        return;
+      const validation = validateForm();
+      console.log('Validation result:', validation); // Debug log
+      
+      if (!validation.isValid) {
+        console.log('Form validation failed:', validation.errors); // Debug log
+        
+        // Show toast messages for each error
+        validation.errors.forEach((error, index) => {
+          setTimeout(() => {
+            toast.error(error, {
+              duration: 4000,
+              position: 'top-center',
+            });
+          }, index * 100);
+        });
+        
+        // Show a summary toast
+        toast.error(`Please fix ${validation.errors.length} error(s) before submitting`, {
+          duration: 5000,
+          position: 'top-center',
+        });
+        
+        return; // This should stop the save process
       }
     }
 
@@ -195,6 +192,7 @@ export default function SuperChoiceFormPage() {
               onDataChange={setFormData}
               readOnly={false}
               showButtons={false}
+              onValidationChange={handleValidationChange}
             />
           </div>
 
