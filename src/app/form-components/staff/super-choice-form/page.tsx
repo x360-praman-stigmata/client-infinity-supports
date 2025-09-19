@@ -350,6 +350,47 @@ interface SuperChoiceFormProps {
   showButtons?: boolean;
 }
 
+// Define the complete form data structure
+export interface SuperChoiceFormData {
+  // Section A - Your Details
+  fullName: string;
+  employeeNumber: string;
+  tfn: string;
+  fundChoice: 'existing' | 'default' | 'smsf' | '';
+  
+  // Section B - Existing Super Fund
+  superFundName: string;
+  superFundABN: string;
+  superFundUSI: string;
+  memberAccountNumber: string;
+  accountName: string;
+  hasComplianceLetter: boolean;
+  sectionBSignature: string | null;
+  sectionBDate: { day: string; month: string; year: string };
+  
+  // Section C - Default Super Fund
+  businessName: string;
+  businessABN: string;
+  defaultSuperFundName: string;
+  defaultSuperFundABN: string;
+  defaultSuperFundUSI: string;
+  chooseDefaultFund: boolean;
+  sectionCSignature: string | null;
+  sectionCDate: { day: string; month: string; year: string };
+  
+  // Section D - SMSF
+  smsfName: string;
+  smsfABN: string;
+  smsfESA: string;
+  smsfAccountName: string;
+  bankAccountName: string;
+  bsbCode: string;
+  accountNumber: string;
+  hasSMSFEvidence: boolean;
+  sectionDSignature: string | null;
+  sectionDDate: { day: string; month: string; year: string };
+}
+
 export default function SuperChoiceForm({
   initialData = {},
   onDataChange,
@@ -402,11 +443,15 @@ export default function SuperChoiceForm({
 
   // Remove page navigation - we'll show all pages in a scrollable view
 
-  const getFormData = () => ({
+  // Create comprehensive form data object with proper typing
+  const getFormData = (): SuperChoiceFormData => ({
+    // Section A - Your Details
     fullName,
     employeeNumber,
     tfn,
     fundChoice,
+    
+    // Section B - Existing Super Fund
     superFundName,
     superFundABN,
     superFundUSI,
@@ -415,6 +460,8 @@ export default function SuperChoiceForm({
     hasComplianceLetter,
     sectionBSignature,
     sectionBDate,
+    
+    // Section C - Default Super Fund
     businessName,
     businessABN,
     defaultSuperFundName,
@@ -423,6 +470,8 @@ export default function SuperChoiceForm({
     chooseDefaultFund,
     sectionCSignature,
     sectionCDate,
+    
+    // Section D - SMSF
     smsfName,
     smsfABN,
     smsfESA,
@@ -435,16 +484,17 @@ export default function SuperChoiceForm({
     sectionDDate
   });
 
-  useEffect(() => {
-    if (onDataChange) {
-      onDataChange(getFormData());
-    }
+  // Notify parent component when any data changes
+  React.useEffect(() => {
+    const formData = getFormData();
+    onDataChange?.(formData);
   }, [
     fullName, employeeNumber, tfn, fundChoice,
     superFundName, superFundABN, superFundUSI, memberAccountNumber, accountName, hasComplianceLetter, sectionBSignature, sectionBDate,
     businessName, businessABN, defaultSuperFundName, defaultSuperFundABN, defaultSuperFundUSI, chooseDefaultFund, sectionCSignature, sectionCDate,
     smsfName, smsfABN, smsfESA, smsfAccountName, bankAccountName, bsbCode, accountNumber, hasSMSFEvidence, sectionDSignature, sectionDDate
   ]);
+
 
   const renderPage1 = () => (
     <div className="relative">

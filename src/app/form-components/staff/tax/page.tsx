@@ -1044,27 +1044,27 @@ export default function TFNOverlayForm({
       />
       
        {showButtons && (
-         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4">
-           <button
-             onClick={handleSave}
-             className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
-           >
-             Save
+       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4">
+  <button
+    onClick={handleSave}
+    className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
+  >
+    Save
+  </button>
+  <button
+    onClick={handleDownloadPDF}
+    disabled={isGeneratingPDF}
+    className="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 disabled:bg-gray-400"
+  >
+    {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
            </button>
            <button
-             onClick={handleDownloadPDF}
-             disabled={isGeneratingPDF}
-             className="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 disabled:bg-gray-400"
-           >
-             {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
-           </button>
-           <button
-             onClick={handleClear}
-             className="px-4 py-2 bg-gray-500 text-white rounded shadow hover:bg-gray-600"
-           >
-             Clear
-           </button>
-         </div>
+    onClick={handleClear}
+    className="px-4 py-2 bg-gray-500 text-white rounded shadow hover:bg-gray-600"
+  >
+    Clear
+  </button>
+</div>
        )}
 
     </div>
