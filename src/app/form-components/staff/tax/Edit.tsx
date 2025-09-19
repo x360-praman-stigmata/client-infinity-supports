@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/components/ui/Toast";
 import TFNOverlayForm from "./page"; // Import the existing view component
 
@@ -167,12 +167,12 @@ export default function GovtTaxEdit({
   };
 
   // Handle data changes from the form
-  const handleDataChange = (data: any) => {
+  const handleDataChange = useCallback((data: any) => {
     setLocalFormData(data);
     if (onChange) {
       onChange(data);
     }
-  };
+  }, [onChange]);
 
   return (
     <div className="relative">

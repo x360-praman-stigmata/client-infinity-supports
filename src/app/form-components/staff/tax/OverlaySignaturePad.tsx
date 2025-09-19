@@ -11,6 +11,7 @@ interface OverlaySignatureBoxProps {
   value: string | null;                // base64 signature
   onChange: (val: string | null) => void;
   label?: string;
+  readOnly?: boolean;
 }
 
 export default function OverlaySignatureBox({
@@ -21,6 +22,7 @@ export default function OverlaySignatureBox({
   value,
   onChange,
   label,
+  readOnly = false,
 }: OverlaySignatureBoxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const sigRef = useRef<SignatureCanvasRef | null>(null);
@@ -37,9 +39,9 @@ export default function OverlaySignatureBox({
     <>
       {/* Signature preview box */}
       <div
-        className="absolute border border-gray-400 bg-white flex flex-col items-center justify-center cursor-pointer"
+        className={`absolute border border-gray-400 bg-white flex flex-col items-center justify-center ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
         style={{ top, left, width, height }}
-        onClick={() => setIsOpen(true)}
+        onClick={() => !readOnly && setIsOpen(true)}
       >
         {value ? (
           <img

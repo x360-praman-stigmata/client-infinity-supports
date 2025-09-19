@@ -2,7 +2,7 @@
 
 import { set } from "date-fns";
 import React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import OverlaySignatureBox from "./OverlaySignaturePad";
 
 // ✅ Character-box overlay input
@@ -17,6 +17,7 @@ interface OverlayCharInputProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  readOnly?: boolean;
 }
 
 function OverlayCharInput({
@@ -29,6 +30,7 @@ function OverlayCharInput({
   totalWidth,
   value,
   onChange,
+  readOnly = false,
 }: OverlayCharInputProps) {
   const [values, setValues] = useState<string[]>(() =>
     Array.from({ length }, (_, i) => value[i] || "")
@@ -43,14 +45,11 @@ function OverlayCharInput({
     ? Math.floor(totalWidth / length)
     : boxWidth || 32;
 
-  useEffect(() => {
-    onChange(values.join(""));
-  }, [values]);
-
   const handleChange = (val: string, idx: number) => {
     const newValues = [...values];
     newValues[idx] = val.slice(-1);
     setValues(newValues);
+    onChange(newValues.join("")); // Call onChange directly when user changes input
     if (val && idx < length - 1) inputsRef.current[idx + 1]?.focus();
   };
 
@@ -73,6 +72,7 @@ function OverlayCharInput({
           onKeyDown={(e) => handleKeyDown(e, i)}
           className="char-input border border-gray-400 text-center text-sm"
           style={{ width: effectiveBoxWidth, height: boxHeight }}
+          readOnly={readOnly}
         />
       ))}
     </div>
@@ -88,6 +88,7 @@ interface OverlayCheckboxProps {
   onChange: (val: boolean) => void;
   boxWidth?: number;
   boxHeight?: number;
+  readOnly?: boolean;
 }
 
 function OverlayCheckbox({
@@ -98,6 +99,7 @@ function OverlayCheckbox({
   onChange,
   boxWidth = 16,
   boxHeight = 16,
+  readOnly = false,
 }: OverlayCheckboxProps) {
   return (
     <label className="absolute flex items-center space-x-2 text-sm" style={{ top, left }}>
@@ -110,6 +112,8 @@ function OverlayCheckbox({
           transform: `scale(${boxWidth / 16})`, // scales relative to default
           transformOrigin: "top left",
         }}
+        readOnly={readOnly}
+        disabled={readOnly}
       />
       {label && <span>{label}</span>}
     </label>
@@ -130,6 +134,7 @@ interface OverlayDateCharInputProps {
   boxHeight?: number;
   value: string; // format: DD/MM/YYYY
   onChange: (val: string) => void;
+  readOnly?: boolean;
 }
 
 function OverlayDateCharInput({
@@ -143,6 +148,7 @@ function OverlayDateCharInput({
   boxHeight = 28,
   value,
   onChange,
+  readOnly = false,
 }: OverlayDateCharInputProps) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const digits = value.replace(/\D/g, "").padEnd(8, "");
@@ -202,6 +208,7 @@ function OverlayDateCharInput({
           onKeyDown={(e) => handleKeyDown(e, section, i)}
           className="border border-gray-400 text-center text-sm"
           style={{ width: boxWidth, height: boxHeight }}
+          readOnly={readOnly}
         />
       );
     });
@@ -239,6 +246,7 @@ interface OverlayMultiRowCharInputProps {
   boxHeight?: number;
   value: string;
   onChange: (val: string) => void;
+  readOnly?: boolean;
 }
 
 function OverlayMultiRowCharInput({
@@ -252,6 +260,7 @@ function OverlayMultiRowCharInput({
   boxHeight = 28,
   value,
   onChange,
+  readOnly = false,
 }: OverlayMultiRowCharInputProps) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const maxChars = rows * cols;
@@ -306,6 +315,7 @@ function OverlayMultiRowCharInput({
                 onKeyDown={(e) => handleKeyDown(e, idx)}
                 className="border border-gray-400 text-center text-sm"
                 style={{ width: boxWidth, height: boxHeight, marginRight: gap }}
+                readOnly={readOnly}
               />
             );
           })}
@@ -324,6 +334,7 @@ function OverlayGroupedCharInput({
   boxHeight = 28,
   value,
   onChange,
+  readOnly = false,
 }: any) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const totalLength = groups.reduce((acc, g) => acc + g.length, 0);
@@ -380,6 +391,7 @@ function OverlayGroupedCharInput({
                 width: boxWidth,
                 height: boxHeight,
               }}
+              readOnly={readOnly}
             />
           );
         });
@@ -396,6 +408,7 @@ interface OverlaySquareRadioGroupProps {
   value: string;
   onChange: (val: string) => void;
   boxSize?: number;
+  readOnly?: boolean;
 }
 
 function OverlaySquareRadioGroup({
@@ -404,6 +417,7 @@ function OverlaySquareRadioGroup({
   value,
   onChange,
   boxSize = 18,
+  readOnly = false,
 }: OverlaySquareRadioGroupProps) {
   return (
     <>
@@ -420,7 +434,7 @@ function OverlaySquareRadioGroup({
               height: boxSize,
               backgroundColor: value === opt.value ? "#2563eb20" : "white", // light blue background if selected
             }}
-            onClick={() => onChange(opt.value)}
+            onClick={() => !readOnly && onChange(opt.value)}
           >
             {value === opt.value && (
               <span className="text-black text-xs font-bold">✔</span>
@@ -433,6 +447,8 @@ function OverlaySquareRadioGroup({
             checked={value === opt.value}
             onChange={() => onChange(opt.value)}
             className="hidden"
+            readOnly={readOnly}
+            disabled={readOnly}
           />
           <span>{opt.label}</span>
         </label>
@@ -449,6 +465,7 @@ interface OverlaySquareRadioGroupProps {
   onChange: (val: string) => void;
   boxSize?: number;
   tickColor?: string;
+  readOnly?: boolean;
 }
 
 function OverlaySquareRadioGroupFour({
@@ -458,6 +475,7 @@ function OverlaySquareRadioGroupFour({
   onChange,
   boxSize = 18,
   tickColor = "black",
+  readOnly = false,
 }: OverlaySquareRadioGroupProps) {
   return (
     <>
@@ -492,6 +510,8 @@ function OverlaySquareRadioGroupFour({
             checked={value === opt.value}
             onChange={() => onChange(opt.value)}
             className="hidden"
+            readOnly={readOnly}
+            disabled={readOnly}
           />
           <span>{opt.label}</span>
         </label>
@@ -520,7 +540,7 @@ export default function TFNOverlayForm({
   readOnly = false, 
   showButtons = true 
 }: TFNOverlayFormProps = {}) {
-  const [tfn, setTfn] = useState(initialData.tfn || "123456789");
+  const [tfn, setTfn] = useState(initialData.tfn || "");
   const [surname, setSurname] = useState(initialData.surname || "");
   const [firstName, setFirstName] = useState(initialData.firstName || "");
   const [otherName, setOtherName] = useState(initialData.otherName || "");
@@ -538,18 +558,18 @@ export default function TFNOverlayForm({
   const [check6, setCheck6] = useState(initialData.check6 || false);
   const [check7, setCheck7] = useState(initialData.check7 || false);
   const [check8, setCheck8] = useState(initialData.check8 || false);
-  const [subscribe, setSubscribe] = useState(initialData.subscribe || true);
+  const [subscribe, setSubscribe] = useState(initialData.subscribe || false);
 
-  const [dob, setDob] = useState(initialData.dob || "10/10/1000");
+  const [dob, setDob] = useState(initialData.dob || "");
   const [address, setAddress] = useState(initialData.address || "");
 
-  const [abnno, setAbnNo] = useState(initialData.abnno || "12345678901");
-  const [branchNo, setBranchNo] = useState(initialData.branchNo || "123");
+  const [abnno, setAbnNo] = useState(initialData.abnno || "");
+  const [branchNo, setBranchNo] = useState(initialData.branchNo || "");
   const [haveAbn, setHaveAbn] = useState(initialData.haveAbn || "");
   const [legalName, setLegalName] = useState(initialData.legalName || "");
 
-  const [payerSignatureAt, setPayerSignatureAt] = useState(initialData.payerSignatureAt || "10/10/1000");
-  const [payeeSignatureAt, setPayeeSignatureAt] = useState(initialData.payeeSignatureAt || "10/10/1000");
+  const [payerSignatureAt, setPayerSignatureAt] = useState(initialData.payerSignatureAt || "");
+  const [payeeSignatureAt, setPayeeSignatureAt] = useState(initialData.payeeSignatureAt || "");
 
   const [austrailanResident, setAustrailanResident] = useState(initialData.austrailanResident || "");
   const [claimTaxFree, setClaimTaxFree] = useState(initialData.claimTaxFree || "");
@@ -570,26 +590,26 @@ export default function TFNOverlayForm({
   const [payeeSignature, setPayeeSignature] = useState<string | null>(initialData.payeeSignature || null);
 
   // Function to get current form data
-  const getFormData = () => ({
+  const getFormData = useCallback(() => ({
     tfn, surname, firstName, otherName, anotherName, town, state, postcode,
     check1, check2, check3, check4, check5, check6, check7, check8, subscribe,
     dob, address, abnno, branchNo, haveAbn, legalName, payerSignatureAt, payeeSignatureAt,
     austrailanResident, claimTaxFree, seniorPensioner, overseasForces, tsldebt,
     financialDebt, bussinessAddress, bussinessTown, bussinessState, bussinessPostcode,
     contactPerson, bussinessPhoneNo, selectedOption, payerSignature, payeeSignature
-  });
+  }), [tfn, surname, firstName, otherName, anotherName, town, state, postcode,
+      check1, check2, check3, check4, check5, check6, check7, check8, subscribe,
+      dob, address, abnno, branchNo, haveAbn, legalName, payerSignatureAt, payeeSignatureAt,
+      austrailanResident, claimTaxFree, seniorPensioner, overseasForces, tsldebt,
+      financialDebt, bussinessAddress, bussinessTown, bussinessState, bussinessPostcode,
+      contactPerson, bussinessPhoneNo, selectedOption, payerSignature, payeeSignature]);
 
   // Notify parent component when data changes
   useEffect(() => {
     if (onDataChange) {
       onDataChange(getFormData());
     }
-  }, [tfn, surname, firstName, otherName, anotherName, town, state, postcode,
-      check1, check2, check3, check4, check5, check6, check7, check8, subscribe,
-      dob, address, abnno, branchNo, haveAbn, legalName, payerSignatureAt, payeeSignatureAt,
-      austrailanResident, claimTaxFree, seniorPensioner, overseasForces, tsldebt,
-      financialDebt, bussinessAddress, bussinessTown, bussinessState, bussinessPostcode,
-      contactPerson, bussinessPhoneNo, selectedOption, payerSignature, payeeSignature]);
+  }, [onDataChange, getFormData]);
 
   const handleSave = () => {
     const formData = {
@@ -732,24 +752,24 @@ export default function TFNOverlayForm({
       <img src="/tax-3img.jpg" className="absolute inset-0 w-full h-full" alt="Form" />
 
       {/* 🔹 TFN */}
-      <OverlayCharInput top={120} left={147} length={9} totalWidth={250} boxHeight={25} value={tfn} onChange={setTfn} />
+      <OverlayCharInput top={120} left={147} length={9} totalWidth={250} boxHeight={25} value={tfn} onChange={setTfn} readOnly={readOnly} />
 
-      <OverlayCheckbox top={153} left={372} checked={check1} onChange={setCheck1} boxWidth={30} boxHeight={30} />
-      <OverlayCheckbox top={185} left={372} checked={check2} onChange={setCheck2} boxWidth={30} boxHeight={30} />
-      <OverlayCheckbox top={216} left={372} checked={check3} onChange={setCheck3} boxWidth={30} boxHeight={30} />
+      <OverlayCheckbox top={153} left={372} checked={check1} onChange={setCheck1} boxWidth={30} boxHeight={30} readOnly={readOnly} />
+      <OverlayCheckbox top={185} left={372} checked={check2} onChange={setCheck2} boxWidth={30} boxHeight={30} readOnly={readOnly} />
+      <OverlayCheckbox top={216} left={372} checked={check3} onChange={setCheck3} boxWidth={30} boxHeight={30} readOnly={readOnly} />
 
 
-      <OverlayCheckbox top={250} left={200} checked={check4} onChange={setCheck4}  boxWidth={30} boxHeight={30} />
-      <OverlayCheckbox top={250} left={255} checked={check5} onChange={setCheck5}  boxWidth={30} boxHeight={30} />
-      <OverlayCheckbox top={250} left={315} checked={check6} onChange={setCheck6} boxWidth={30} boxHeight={30}  />
-      <OverlayCheckbox top={250} left={372} checked={check7} onChange={setCheck7} boxWidth={30} boxHeight={30}  />
+      <OverlayCheckbox top={250} left={200} checked={check4} onChange={setCheck4}  boxWidth={30} boxHeight={30} readOnly={readOnly} />
+      <OverlayCheckbox top={250} left={255} checked={check5} onChange={setCheck5}  boxWidth={30} boxHeight={30} readOnly={readOnly} />
+      <OverlayCheckbox top={250} left={315} checked={check6} onChange={setCheck6} boxWidth={30} boxHeight={30} readOnly={readOnly} />
+      <OverlayCheckbox top={250} left={372} checked={check7} onChange={setCheck7} boxWidth={30} boxHeight={30} readOnly={readOnly} />
 
       
-      <OverlayCharInput top={283} left={30} length={19} totalWidth={370} boxHeight={25} value={surname} onChange={setSurname} />
+      <OverlayCharInput top={283} left={30} length={19} totalWidth={370} boxHeight={25} value={surname} onChange={setSurname} readOnly={readOnly} />
 
-      <OverlayCharInput top={320} left={30} length={19} totalWidth={370} boxHeight={25} value={firstName} onChange={setFirstName} />
-      <OverlayCharInput top={355} left={30} length={19} totalWidth={370} boxHeight={25} value={otherName} onChange={setOtherName} />
-      <OverlayCharInput top={415} left={30} length={19} totalWidth={370} boxHeight={25} value={anotherName} onChange={setAnotherName} />
+      <OverlayCharInput top={320} left={30} length={19} totalWidth={370} boxHeight={25} value={firstName} onChange={setFirstName} readOnly={readOnly} />
+      <OverlayCharInput top={355} left={30} length={19} totalWidth={370} boxHeight={25} value={otherName} onChange={setOtherName} readOnly={readOnly} />
+      <OverlayCharInput top={415} left={30} length={19} totalWidth={370} boxHeight={25} value={anotherName} onChange={setAnotherName} readOnly={readOnly} />
 
     {/* DOB */}
     <OverlayDateCharInput
@@ -763,7 +783,7 @@ export default function TFNOverlayForm({
   boxHeight={28}
   value={dob}
   onChange={setDob}
-
+  readOnly={readOnly}
 />
 
 <OverlayMultiRowCharInput
@@ -775,15 +795,16 @@ export default function TFNOverlayForm({
   boxHeight={28}
   value={address}
   onChange={setAddress}
+  readOnly={readOnly}
 />
 
 
-      <OverlayCharInput top={570} left={30} length={19} totalWidth={370} boxHeight={25} value={town} onChange={setTown} />
-      <OverlayCharInput top={605} left={30} length={3} totalWidth={70} boxHeight={25} value={state} onChange={setState} />
-      <OverlayCharInput top={605} left={125} length={4} totalWidth={77} boxHeight={25} value={postcode} onChange={setPostcode} />
+      <OverlayCharInput top={570} left={30} length={19} totalWidth={370} boxHeight={25} value={town} onChange={setTown} readOnly={readOnly} />
+      <OverlayCharInput top={605} left={30} length={3} totalWidth={70} boxHeight={25} value={state} onChange={setState} readOnly={readOnly} />
+      <OverlayCharInput top={605} left={125} length={4} totalWidth={77} boxHeight={25} value={postcode} onChange={setPostcode} readOnly={readOnly} />
 
 
-            <OverlayCharInput top={708} left={320} length={3} totalWidth={70} boxHeight={25} value={branchNo} onChange={setBranchNo} />
+            <OverlayCharInput top={708} left={320} length={3} totalWidth={70} boxHeight={25} value={branchNo} onChange={setBranchNo} readOnly={readOnly} />
 
           <OverlayGroupedCharInput
   groups={[
@@ -796,6 +817,7 @@ export default function TFNOverlayForm({
   boxHeight={28}
   value={abnno}
   onChange={setAbnNo}
+  readOnly={readOnly}
 />
 
 <OverlaySquareRadioGroup
@@ -807,6 +829,7 @@ export default function TFNOverlayForm({
     { label: "", value: "no", top: 768, left: 100 },
   ]}
   boxSize={20}
+  readOnly={readOnly}
 />
 
 
@@ -819,6 +842,7 @@ export default function TFNOverlayForm({
   boxHeight={28}
   value={legalName}
   onChange={setLegalName}
+  readOnly={readOnly}
 />
 
 
@@ -938,6 +962,7 @@ export default function TFNOverlayForm({
   boxHeight={28}
   value={bussinessAddress}
   onChange={setBussinessAddress}
+  readOnly={readOnly}
 />
 
 <OverlayMultiRowCharInput
@@ -949,6 +974,7 @@ export default function TFNOverlayForm({
   boxHeight={25}
   value={bussinessTown}
   onChange={setBussinessTown}
+  readOnly={readOnly}
 />
 
 <OverlayMultiRowCharInput
@@ -960,6 +986,7 @@ export default function TFNOverlayForm({
   boxHeight={25}
   value={bussinessState}
   onChange={setBussinessState}
+  readOnly={readOnly}
 />
 
 <OverlayMultiRowCharInput
@@ -971,6 +998,7 @@ export default function TFNOverlayForm({
   boxHeight={25}
   value={bussinessPostcode}
   onChange={setBussinessPostcode}
+  readOnly={readOnly}
 />
 
 
@@ -983,6 +1011,7 @@ export default function TFNOverlayForm({
   boxHeight={25}
   value={contactPerson}
   onChange={setContactPerson}
+  readOnly={readOnly}
 />
 
 <OverlayMultiRowCharInput
@@ -994,9 +1023,10 @@ export default function TFNOverlayForm({
   boxHeight={25}
   value={bussinessPhoneNo}
   onChange={setBussinessPhoneNo}
+  readOnly={readOnly}
 />
 
-      <OverlayCheckbox top={905} left={745} checked={check8} onChange={setCheck8} boxWidth={30} boxHeight={30}  />
+      <OverlayCheckbox top={905} left={745} checked={check8} onChange={setCheck8} boxWidth={30} boxHeight={30} readOnly={readOnly} />
 
 
       <OverlaySquareRadioGroupFour
@@ -1012,6 +1042,7 @@ export default function TFNOverlayForm({
   ]}
   boxSize={19}
   tickColor="black"
+  readOnly={readOnly}
 />
 
 
@@ -1030,6 +1061,7 @@ export default function TFNOverlayForm({
         value={payerSignature}
         onChange={setPayerSignature}
         label=""
+        readOnly={readOnly}
       />
 
       {/* Payee signature positioned on form */}
@@ -1041,6 +1073,7 @@ export default function TFNOverlayForm({
         value={payeeSignature}
         onChange={setPayeeSignature}
         label=""
+        readOnly={readOnly}
       />
       
        {showButtons && (

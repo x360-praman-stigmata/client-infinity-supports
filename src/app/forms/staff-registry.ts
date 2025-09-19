@@ -20,6 +20,7 @@ import OrientationEdit from '../form-components/staff/orientation/Edit';
 import VehicleSafetyInspectionView from '../form-components/staff/vehicle-safety-inspection/View';
 import VehicleSafetyInspectionEdit from '../form-components/staff/vehicle-safety-inspection/Edit';
 import GovtTax from '@/app/form-components/staff/tax/page'
+import GovtTaxView from '@/app/form-components/staff/tax/View'
 import GovtTaxEdit from '@/app/form-components/staff/tax/Edit'
 import SuperChoiceForm from '@/app/form-components/staff/super-choice-form/page'
 import SuperChoiceFormView from '@/app/form-components/staff/super-choice-form/View'
@@ -99,7 +100,7 @@ const staffFormRegistry: Record<string, StaffFormRegistryItem> = {
   govt_tax: {
     key: 'govt_tax',
     name: 'Government Tax',
-    viewComponent: GovtTax,
+    viewComponent: GovtTaxView,
     editComponent: GovtTaxEdit,
   },
   super_choice_form: {

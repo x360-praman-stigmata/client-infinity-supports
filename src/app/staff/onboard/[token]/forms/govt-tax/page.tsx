@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getStaffFormComponent } from '@/app/forms/staff-registry';
 
 export default function GovtTaxFormPage() {
@@ -61,6 +61,10 @@ export default function GovtTaxFormPage() {
     }
   };
 
+  const handleFormDataChange = useCallback((values: any) => {
+    setFormData(prev => ({ ...prev, ...values }));
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -69,7 +73,7 @@ export default function GovtTaxFormPage() {
     );
   }
 
-  const GovtTaxView = getStaffFormComponent('govt_tax', 'view');
+  const GovtTaxEdit = getStaffFormComponent('govt_tax', 'edit');
 
   return (
     <div className="min-h-screen bg-gray-100 py-4 md:py-8">
@@ -102,31 +106,16 @@ export default function GovtTaxFormPage() {
           </div>
         </div>
 
-        {/* View Component */}
+        {/* Edit Component - Staff can type and edit */}
         <div className="bg-white rounded-lg shadow-lg p-2 md:p-6">
           <div className="view-component-wrapper w-full">
-            <GovtTaxView 
-              initialData={formData}
-              onDataChange={setFormData}
-              showButtons={false}
+            <GovtTaxEdit 
+              formData={formData}
+              commonFieldsData={{}}
+              onChange={handleFormDataChange}
+              readOnly={false}
+              handleSave={handleSave}
             />
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
-            <button
-              onClick={() => handleSave(false)}
-              disabled={saving}
-              className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 w-full sm:w-auto"
-            >
-              {saving ? 'Saving...' : 'Save Draft'}
-            </button>
-            <button
-              onClick={() => handleSave(true)}
-              disabled={saving}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 w-full sm:w-auto"
-            >
-              {saving ? 'Submitting...' : 'Submit & Continue'}
-            </button>
           </div>
         </div>
       </div>

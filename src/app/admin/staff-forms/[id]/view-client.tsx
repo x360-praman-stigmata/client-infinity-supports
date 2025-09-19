@@ -9,6 +9,7 @@ import { FaArrowLeft, FaEye } from 'react-icons/fa';
 export default function StaffFormViewClient({ formKey }: { formKey: string }) {
   const [settings, setSettings] = useState<any>({});
   const [loading, setLoading] = useState(true);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -16,6 +17,12 @@ export default function StaffFormViewClient({ formKey }: { formKey: string }) {
       try {
         const s = await fetchFormSpecificSettings();
         setSettings(s || {});
+        setSettingsError(null);
+      } catch (error) {
+        console.error('Failed to fetch form settings:', error);
+        // Set empty settings as fallback
+        setSettings({});
+        setSettingsError(error instanceof Error ? error.message : 'Failed to load settings');
       } finally {
         setLoading(false);
       }
@@ -61,6 +68,11 @@ export default function StaffFormViewClient({ formKey }: { formKey: string }) {
               <div>
                 <h1 className="text-3xl font-bold text-slate-900 mb-1">Staff Form</h1>
                 <p className="text-sm text-slate-500">Form preview and metadata</p>
+                {settingsError && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    ⚠️ Settings not loaded: {settingsError}
+                  </p>
+                )}
               </div>
             </div>
           </div>

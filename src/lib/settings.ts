@@ -68,7 +68,9 @@ export async function fetchFormSpecificSettings(forceRefresh = false): Promise<G
     const response = await fetch('/api/settings?forms=true');
     
     if (!response.ok) {
-      throw new Error('Failed to fetch settings');
+      const errorText = await response.text();
+      console.error(`Settings API error: ${response.status} ${response.statusText}`, errorText);
+      throw new Error(`Failed to fetch settings: ${response.status} ${response.statusText}`);
     }
 
     console.log('Fetched form-specific settings:', response);
