@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import OverlaySignatureBox from "../tax/OverlaySignaturePad";
 
 // Overlay Components
 const CharacterInput = ({ 
@@ -97,6 +98,7 @@ const CharacterInput = ({
             height: boxHeight,
             marginRight: i < length - 1 ? (
               length === 9 ? (i === 2 ? 20 : i === 5 ? 24 : gap) : // TFN: 3-3-3 grouping
+              length === 11 ? (i === 1 ? 21 : i === 4 ? 21 : i === 7 ? 22 : gap) : // ABN: 2-3-3-3 grouping with custom spacing
               gap // All other fields (including employee number) use normal gap
             ) : 0,
             fontSize: '12px',
@@ -191,126 +193,38 @@ const Checkbox = ({
   />
 );
 
+// Removed ABNInput component - using CharacterInput with proper margin logic instead
 
-const SignaturePad = ({ 
-  value, 
-  onChange, 
-  top, 
-  left, 
-  width, 
-  height,
-  readOnly = false 
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-  readOnly?: boolean;
-}) => {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
 
-  useEffect(() => {
-      if (value && canvasRef.current) {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          const img = new (window as any).Image();
-          img.onload = () => {
-            ctx.drawImage(img, 0, 0, width, height);
-          };
-          img.src = value;
-        }
-      }
-  }, [value, width, height]);
-
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (readOnly) return;
-    setIsDrawing(true);
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.beginPath();
-        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-      }
-    }
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || readOnly) return;
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-        ctx.stroke();
-      }
-    }
-  };
-
-  const stopDrawing = () => {
-    if (readOnly) return;
-    setIsDrawing(false);
-    const canvas = canvasRef.current;
-    if (canvas) {
-      onChange(canvas.toDataURL());
-    }
-  };
-
-  const clearSignature = () => {
-    if (readOnly) return;
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, width, height);
-        onChange('');
-      }
-    }
-  };
-
-  return (
-    <div className="absolute" style={{ top, left }}>
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        className="border border-gray-300 bg-white cursor-crosshair"
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        style={{ cursor: readOnly ? 'default' : 'crosshair' }}
-      />
-      {!readOnly && (
-        <button
-          type="button"
-          onClick={clearSignature}
-          className="absolute -top-6 left-0 text-xs text-blue-600 hover:text-blue-800"
-        >
-          Clear
-        </button>
-      )}
-    </div>
-  );
-};
+// Removed SignaturePad component - now using OverlaySignatureBox from government tax form
 
 const DateInput = ({ 
   value, 
   onChange, 
-  top, 
-  left, 
+  dayTop,
+  dayLeft,
+  monthTop,
+  monthLeft,
+  yearTop,
+  yearLeft,
+  separator1Top,
+  separator1Left,
+  separator2Top,
+  separator2Left,
   readOnly = false 
 }: {
   value: { day: string; month: string; year: string };
   onChange: (value: { day: string; month: string; year: string }) => void;
-  top: number;
-  left: number;
+  dayTop: number;
+  dayLeft: number;
+  monthTop: number;
+  monthLeft: number;
+  yearTop: number;
+  yearLeft: number;
+  separator1Top: number;
+  separator1Left: number;
+  separator2Top: number;
+  separator2Left: number;
   readOnly?: boolean;
 }) => {
   const handleChange = (field: 'day' | 'month' | 'year', val: string) => {
@@ -318,34 +232,110 @@ const DateInput = ({
   };
 
   return (
-    <div className="absolute" style={{ top, left }}>
-      <CharacterInput
-        value={value.day}
-        onChange={(val) => handleChange('day', val)}
-        length={2}
-        top={0}
-        left={0}
-        readOnly={readOnly}
-      />
-      <span className="absolute top-1 left-12 text-sm">/</span>
-      <CharacterInput
-        value={value.month}
-        onChange={(val) => handleChange('month', val)}
-        length={2}
-        top={0}
-        left={20}
-        readOnly={readOnly}
-      />
-      <span className="absolute top-1 left-32 text-sm">/</span>
-      <CharacterInput
-        value={value.year}
-        onChange={(val) => handleChange('year', val)}
-        length={4}
-        top={0}
-        left={40}
-        readOnly={readOnly}
-      />
-    </div>
+    <>
+      {/* Day - 2 boxes */}
+      <div className="absolute" style={{ top: dayTop, left: dayLeft }}>
+        <div className="flex">
+          {Array.from({ length: 2 }, (_, i) => (
+            <input
+              key={i}
+              type="text"
+              maxLength={1}
+              value={value.day[i] || ''}
+              onChange={(e) => {
+                const newDay = value.day.split('');
+                newDay[i] = e.target.value;
+                handleChange('day', newDay.join(''));
+              }}
+              className="border border-black text-center bg-white text-black"
+              style={{
+                width: 20,
+                height: 25,
+                marginRight: i < 1 ? 2 : 0,
+                fontSize: '12px',
+                padding: 0,
+                color: 'black'
+              }}
+              readOnly={readOnly}
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* First Separator */}
+      <span 
+        className="absolute text-sm text-black" 
+        style={{ top: separator1Top, left: separator1Left }}
+      >
+        /
+      </span>
+      
+      {/* Month - 2 boxes */}
+      <div className="absolute" style={{ top: monthTop, left: monthLeft }}>
+        <div className="flex">
+          {Array.from({ length: 2 }, (_, i) => (
+            <input
+              key={i}
+              type="text"
+              maxLength={1}
+              value={value.month[i] || ''}
+              onChange={(e) => {
+                const newMonth = value.month.split('');
+                newMonth[i] = e.target.value;
+                handleChange('month', newMonth.join(''));
+              }}
+              className="border border-black text-center bg-white text-black"
+              style={{
+                width: 20,
+                height: 25,
+                marginRight: i < 1 ? 2 : 0,
+                fontSize: '12px',
+                padding: 0,
+                color: 'black'
+              }}
+              readOnly={readOnly}
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* Second Separator */}
+      <span 
+        className="absolute text-sm text-black" 
+        style={{ top: separator2Top, left: separator2Left }}
+      >
+        /
+      </span>
+      
+      {/* Year - 4 boxes */}
+      <div className="absolute" style={{ top: yearTop, left: yearLeft }}>
+        <div className="flex">
+          {Array.from({ length: 4 }, (_, i) => (
+            <input
+              key={i}
+              type="text"
+              maxLength={1}
+              value={value.year[i] || ''}
+              onChange={(e) => {
+                const newYear = value.year.split('');
+                newYear[i] = e.target.value;
+                handleChange('year', newYear.join(''));
+              }}
+              className="border border-black text-center bg-white text-black"
+              style={{
+                width: 20,
+                height: 25,
+                marginRight: i < 3 ? 2 : 0,
+                fontSize: '12px',
+                padding: 0,
+                color: 'black'
+              }}
+              readOnly={readOnly}
+            />
+          ))}
+        </div>
+      </div>
+    </>
   );
 };
 
@@ -381,7 +371,7 @@ export default function SuperChoiceForm({
   const [memberAccountNumber, setMemberAccountNumber] = useState(initialData.memberAccountNumber || "");
   const [accountName, setAccountName] = useState(initialData.accountName || "");
   const [hasComplianceLetter, setHasComplianceLetter] = useState(initialData.hasComplianceLetter || false);
-  const [sectionBSignature, setSectionBSignature] = useState(initialData.sectionBSignature || "");
+  const [sectionBSignature, setSectionBSignature] = useState<string | null>(initialData.sectionBSignature || null);
   const [sectionBDate, setSectionBDate] = useState(initialData.sectionBDate || { day: "", month: "", year: "" });
   
   // Page 3 - Section C: My employer's default super fund
@@ -391,7 +381,7 @@ export default function SuperChoiceForm({
   const [defaultSuperFundABN, setDefaultSuperFundABN] = useState(initialData.defaultSuperFundABN || "");
   const [defaultSuperFundUSI, setDefaultSuperFundUSI] = useState(initialData.defaultSuperFundUSI || "");
   const [chooseDefaultFund, setChooseDefaultFund] = useState(initialData.chooseDefaultFund || false);
-  const [sectionCSignature, setSectionCSignature] = useState(initialData.sectionCSignature || "");
+  const [sectionCSignature, setSectionCSignature] = useState<string | null>(initialData.sectionCSignature || null);
   const [sectionCDate, setSectionCDate] = useState(initialData.sectionCDate || { day: "", month: "", year: "" });
   
   // Page 4 - Section D: My private self-managed super fund (SMSF)
@@ -403,7 +393,7 @@ export default function SuperChoiceForm({
   const [bsbCode, setBsbCode] = useState(initialData.bsbCode || "");
   const [accountNumber, setAccountNumber] = useState(initialData.accountNumber || "");
   const [hasSMSFEvidence, setHasSMSFEvidence] = useState(initialData.hasSMSFEvidence || false);
-  const [sectionDSignature, setSectionDSignature] = useState(initialData.sectionDSignature || "");
+  const [sectionDSignature, setSectionDSignature] = useState<string | null>(initialData.sectionDSignature || null);
   const [sectionDDate, setSectionDDate] = useState(initialData.sectionDDate || { day: "", month: "", year: "" });
 
   // Remove page navigation - we'll show all pages in a scrollable view
@@ -545,9 +535,10 @@ export default function SuperChoiceForm({
       <TextInput
         value={superFundName}
         onChange={setSuperFundName}
-        top={250}
-        left={300}
-        width={400}
+        top={248}
+        left={40}
+        width={814}
+        height={25}
         readOnly={readOnly}
       />
       
@@ -555,17 +546,23 @@ export default function SuperChoiceForm({
         value={superFundABN}
         onChange={setSuperFundABN}
         length={11}
-        top={300}
-        left={300}
+        top={306}
+        left={44}
+        gap={2}
+        boxWidth={20}
+        boxHeight={25}
         readOnly={readOnly}
       />
       
       <CharacterInput
         value={superFundUSI}
         onChange={setSuperFundUSI}
-        length={11}
-        top={350}
-        left={300}
+        length={14}
+        top={364}
+        left={41}
+        gap={2}
+        boxWidth={20}
+        boxHeight={25}
         readOnly={readOnly}
       />
       
@@ -573,43 +570,51 @@ export default function SuperChoiceForm({
         value={memberAccountNumber}
         onChange={setMemberAccountNumber}
         length={16}
-        top={400}
-        left={300}
+        top={472}
+        left={42}
         readOnly={readOnly}
       />
       
       <TextInput
         value={accountName}
         onChange={setAccountName}
-        top={450}
-        left={300}
-        width={400}
+        top={579}
+        left={44}
+        width={810}
+        height={25}
         readOnly={readOnly}
       />
       
       <Checkbox
         checked={hasComplianceLetter}
         onChange={setHasComplianceLetter}
-        top={550}
-        left={50}
+        top={769}
+        left={38}
+        width={26}
+        height={29}
         readOnly={readOnly}
       />
       
-      <SignaturePad
+      <OverlaySignatureBox
         value={sectionBSignature}
         onChange={setSectionBSignature}
-        top={650}
-        left={300}
-        width={300}
-        height={80}
-        readOnly={readOnly}
+        top={913}
+        left={45}
+        width={544}
+        height={76}
+        label=""
       />
       
       <DateInput
         value={sectionBDate}
         onChange={setSectionBDate}
-        top={750}
-        left={300}
+        dayTop={965}
+        dayLeft={640}
+        monthTop={965}
+        monthLeft={708}
+        yearTop={965}
+        yearLeft={771}
+        
         readOnly={readOnly}
       />
     </div>
@@ -629,9 +634,9 @@ export default function SuperChoiceForm({
       <TextInput
         value={businessName}
         onChange={setBusinessName}
-        top={250}
-        left={300}
-        width={400}
+        top={246}
+        left={70}
+        width={756}
         readOnly={readOnly}
       />
       
@@ -639,17 +644,17 @@ export default function SuperChoiceForm({
         value={businessABN}
         onChange={setBusinessABN}
         length={11}
-        top={300}
-        left={300}
+        top={303}
+        left={71}
         readOnly={readOnly}
       />
       
       <TextInput
         value={defaultSuperFundName}
         onChange={setDefaultSuperFundName}
-        top={350}
-        left={300}
-        width={400}
+        top={362}
+        left={71}
+        width={756}
         readOnly={readOnly}
       />
       
@@ -657,43 +662,50 @@ export default function SuperChoiceForm({
         value={defaultSuperFundABN}
         onChange={setDefaultSuperFundABN}
         length={11}
-        top={400}
-        left={300}
+        top={419}
+        left={71}
         readOnly={readOnly}
       />
       
       <CharacterInput
         value={defaultSuperFundUSI}
         onChange={setDefaultSuperFundUSI}
-        length={11}
-        top={450}
-        left={300}
+        length={14}
+        top={477}
+        left={71}
         readOnly={readOnly}
       />
       
       <Checkbox
         checked={chooseDefaultFund}
         onChange={setChooseDefaultFund}
-        top={550}
-        left={50}
+        top={679}
+        left={40}
+        width={26}
+        height={29}
         readOnly={readOnly}
       />
       
-      <SignaturePad
+      <OverlaySignatureBox
         value={sectionCSignature}
         onChange={setSectionCSignature}
-        top={650}
-        left={300}
-        width={300}
+        top={737}
+        left={40}
+        width={550}
         height={80}
-        readOnly={readOnly}
+        label=""
       />
       
       <DateInput
         value={sectionCDate}
         onChange={setSectionCDate}
-        top={750}
-        left={300}
+        dayTop={792}
+        dayLeft={639}
+        monthTop={792}
+        monthLeft={706}
+        yearTop={792}
+        yearLeft={770}
+
         readOnly={readOnly}
       />
     </div>
@@ -713,9 +725,9 @@ export default function SuperChoiceForm({
       <TextInput
         value={smsfName}
         onChange={setSmsfName}
-        top={250}
-        left={300}
-        width={400}
+        top={145}
+        left={42}
+        width={812}
         readOnly={readOnly}
       />
       
@@ -723,35 +735,35 @@ export default function SuperChoiceForm({
         value={smsfABN}
         onChange={setSmsfABN}
         length={11}
-        top={300}
-        left={300}
+        top={202}
+        left={42}
         readOnly={readOnly}
       />
       
       <TextInput
         value={smsfESA}
         onChange={setSmsfESA}
-        top={350}
-        left={300}
-        width={400}
+        top={260}
+        left={42}
+        width={812}
         readOnly={readOnly}
       />
       
       <TextInput
         value={smsfAccountName}
         onChange={setSmsfAccountName}
-        top={400}
-        left={300}
-        width={400}
+        top={365}
+        left={42}
+        width={812}
         readOnly={readOnly}
       />
       
       <TextInput
         value={bankAccountName}
         onChange={setBankAccountName}
-        top={500}
-        left={300}
-        width={400}
+        top={485}
+        left={42}
+        width={812}
         readOnly={readOnly}
       />
       
@@ -759,43 +771,49 @@ export default function SuperChoiceForm({
         value={bsbCode}
         onChange={setBsbCode}
         length={6}
-        top={550}
-        left={300}
+        top={543}
+        left={42}
         readOnly={readOnly}
       />
       
       <CharacterInput
         value={accountNumber}
         onChange={setAccountNumber}
-        length={9}
-        top={600}
-        left={300}
+        length={10}
+        top={601}
+        left={42}
         readOnly={readOnly}
       />
       
       <Checkbox
         checked={hasSMSFEvidence}
         onChange={setHasSMSFEvidence}
-        top={700}
-        left={50}
+        top={688}
+        left={40}
+         width={24}
+        height={80}
         readOnly={readOnly}
       />
       
-      <SignaturePad
+      <OverlaySignatureBox
         value={sectionDSignature}
         onChange={setSectionDSignature}
-        top={800}
-        left={300}
-        width={300}
+        top={820}
+        left={40}
+        width={550}
         height={80}
-        readOnly={readOnly}
+        label=""
       />
       
       <DateInput
         value={sectionDDate}
         onChange={setSectionDDate}
-        top={900}
-        left={300}
+       dayTop={873}
+        dayLeft={640}
+        monthTop={873}
+        monthLeft={708}
+        yearTop={873}
+        yearLeft={770}
         readOnly={readOnly}
       />
     </div>
@@ -813,65 +831,46 @@ export default function SuperChoiceForm({
     </div>
   );
 
-  const renderCurrentPage = () => {
-    switch (currentPage) {
-      case 1: return renderPage1();
-      case 2: return renderPage2();
-      case 3: return renderPage3();
-      case 4: return renderPage4();
-      case 5: return renderPage5();
-      default: return renderPage1();
-    }
-  };
+  // Removed renderCurrentPage - now showing all pages in scrollable view
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      {/* Page Navigation */}
-      <div className="flex justify-center mb-4">
-        <div className="flex space-x-2">
-          {[1, 2, 3, 4, 5].map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded text-sm ${
-                currentPage === page
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-              disabled={readOnly}
-            >
-              Page {page}
-            </button>
-          ))}
+      {/* Scrollable Form Container */}
+      <div className="space-y-8">
+        {/* Page 1 - Section A: Your details */}
+        <div className="border-b pb-8">
+          <h2 className="text-xl font-semibold mb-4 text-center">Page 1 - Section A: Your details</h2>
+          {renderPage1()}
+        </div>
+
+        {/* Page 2 - Section B: My existing super fund */}
+        <div className="border-b pb-8">
+          <h2 className="text-xl font-semibold mb-4 text-center">Page 2 - Section B: My existing super fund</h2>
+          {renderPage2()}
+        </div>
+
+        {/* Page 3 - Section C: My employer's default super fund */}
+        <div className="border-b pb-8">
+          <h2 className="text-xl font-semibold mb-4 text-center">Page 3 - Section C: My employer's default super fund</h2>
+          {renderPage3()}
+        </div>
+
+        {/* Page 4 - Section D: My private self-managed super fund (SMSF) */}
+        <div className="border-b pb-8">
+          <h2 className="text-xl font-semibold mb-4 text-center">Page 4 - Section D: My private self-managed super fund (SMSF)</h2>
+          {renderPage4()}
+        </div>
+
+        {/* Page 5 - Final page */}
+        <div className="pb-8">
+          <h2 className="text-xl font-semibold mb-4 text-center">Page 5 - Final</h2>
+          {renderPage5()}
         </div>
       </div>
 
-      {/* Current Page Content */}
-      {renderCurrentPage()}
-
-      {/* Navigation Buttons */}
-      {!readOnly && (
-        <div className="flex justify-between mt-4">
-          <button
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            className="px-4 py-2 bg-gray-500 text-white rounded disabled:bg-gray-300"
-          >
-            Previous
-          </button>
-          <button
-            onClick={() => setCurrentPage(Math.min(5, currentPage + 1))}
-            disabled={currentPage === 5}
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
-          >
-            Next
-          </button>
-        </div>
-      )}
-
       {/* Action Buttons */}
       {showButtons && (
-        <div className="flex gap-4 mt-6 justify-center">
+        <div className="flex gap-4 mt-8 justify-center sticky bottom-4 bg-white p-4 rounded-lg shadow-lg">
           <button className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
             Save Draft
           </button>
