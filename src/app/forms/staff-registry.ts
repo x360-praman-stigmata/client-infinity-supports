@@ -27,6 +27,8 @@ import SuperChoiceFormView from '@/app/form-components/staff/super-choice-form/V
 import SuperChoiceFormEdit from '@/app/form-components/staff/super-choice-form/Edit'
 
 import ConflictFormMain from '../form-components/staff/conflict-of-interest/page';
+import ConflictFormView from '../form-components/staff/conflict-of-interest/View';
+import ConflictFormEdit from '../form-components/staff/conflict-of-interest/Edit';
 import DocumentationAcknowledgement from '../form-components/staff/acknowledgement/page';
 
 export interface StaffFormRegistryItem {
@@ -118,7 +120,8 @@ const staffFormRegistry: Record<string, StaffFormRegistryItem> = {
   conflict_of_interest: {
     key: 'conflict_of_interest',
     name: 'Conflict of Interest Disclosure Form',
-    viewComponent: ConflictFormMain,
+    viewComponent: ConflictFormView,
+    editComponent: ConflictFormEdit,
   },
   documentation_acknowledgement: {
     key: 'documentation_acknowledgement',
