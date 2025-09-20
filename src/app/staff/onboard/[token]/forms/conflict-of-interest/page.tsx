@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import ConflictFormEdit from '@/app/form-components/staff/conflict-of-interest/Edit';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function ConflictOfInterestFormPage() {
   const { token } = useParams<{ token: string }>();
@@ -94,9 +95,11 @@ export default function ConflictOfInterestFormPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
+      <LoadingSpinner 
+        title="Loading Form" 
+        message="Please wait while we load the form..."
+        size="md"
+      />
     );
   }
 

@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import ConflictFormPage1 from './page1';
 import ConflictFormPage2 from './page2';
 import ConflictFormPage3 from './page3';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface ConflictFormData {
   // Employee Information
@@ -105,6 +106,7 @@ export default function ConflictFormEdit({
   const [isInitialized, setIsInitialized] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleDataChange = useCallback((newData: Partial<ConflictFormData>) => {
     setFormData(prev => ({ ...prev, ...newData }));
@@ -180,10 +182,17 @@ export default function ConflictFormEdit({
   }, [formData]);
 
   const handleSave = useCallback(async () => {
-    if (onSave) {
-      await onSave(formData);
+    if (isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      if (onSave) {
+        await onSave(formData);
+      }
+    } finally {
+      setIsSaving(false);
     }
-  }, [formData, onSave]);
+  }, [formData, onSave, isSaving]);
 
   const handleSubmit = useCallback(async () => {
     if (isSubmitting) return;
@@ -209,6 +218,27 @@ export default function ConflictFormEdit({
       setIsSubmitting(false);
     }
   }, [formData, onSubmit, validateForm, isSubmitting]);
+
+  // Show loading spinner when saving or submitting
+  if (isSaving) {
+    return (
+      <LoadingSpinner 
+        title="Saving Draft" 
+        subtitle="Please wait while we save your form..."
+        size="md"
+      />
+    );
+  }
+
+  if (isSubmitting) {
+    return (
+      <LoadingSpinner 
+        title="Submitting Form" 
+        subtitle="Please wait while we process your submission..."
+        size="md"
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
@@ -293,14 +323,14 @@ export default function ConflictFormEdit({
               <div className="flex gap-4">
                 <button
                   onClick={handleSave}
-                  disabled={isSubmitting}
+                  disabled={isSaving || isSubmitting}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Save Draft
+                  {isSaving ? 'Saving...' : 'Save Draft'}
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={isSubmitting}
+                  disabled={isSaving || isSubmitting}
                   className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit & Continue'}

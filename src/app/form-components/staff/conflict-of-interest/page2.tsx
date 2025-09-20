@@ -98,29 +98,29 @@ export default function ConflictFormPage2({ formData, readOnly = false, onDataCh
         <>
           <p className="font-bold mb-2">
             Description of vendor relationships:
-          </p>
-          <div className="mb-6">
-            {readOnly ? (
-              <div className="space-y-2">
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="border-b border-gray-400 h-6"></div>
-                ))}
-              </div>
-            ) : (
-              <textarea
-                value={formData.vendorDetails || ""}
-                onChange={(e) => handleInputChange('vendorDetails', e.target.value)}
+      </p>
+      <div className="mb-6">
+        {readOnly ? (
+          <div className="space-y-2">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="border-b border-gray-400 h-6"></div>
+            ))}
+          </div>
+        ) : (
+          <textarea
+            value={formData.vendorDetails || ""}
+            onChange={(e) => handleInputChange('vendorDetails', e.target.value)}
                 className={`w-full border p-2 focus:outline-none ${
                   validationErrors.vendorDetails 
                     ? 'border-red-500 bg-red-50' 
                     : 'border-gray-400 focus:border-blue-500'
                 }`}
-                rows={6}
-                placeholder="Describe any vendor relationships..."
+            rows={6}
+            placeholder="Describe any vendor relationships..."
                 data-error={validationErrors.vendorDetails ? 'true' : undefined}
-              />
-            )}
-          </div>
+          />
+        )}
+      </div>
         </>
       )}
 
@@ -193,28 +193,28 @@ export default function ConflictFormPage2({ formData, readOnly = false, onDataCh
           <p className="font-bold mb-2">
             Description of outside employment or business activities:
           </p>
-          <div className="mb-6">
-            {readOnly ? (
-              <div className="space-y-2">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <div key={index} className="border-b border-gray-400 h-6"></div>
-                ))}
-              </div>
-            ) : (
-              <textarea
-                value={formData.employmentDetails || ""}
-                onChange={(e) => handleInputChange('employmentDetails', e.target.value)}
+      <div className="mb-6">
+        {readOnly ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="border-b border-gray-400 h-6"></div>
+            ))}
+          </div>
+        ) : (
+          <textarea
+            value={formData.employmentDetails || ""}
+            onChange={(e) => handleInputChange('employmentDetails', e.target.value)}
                 className={`w-full border p-2 focus:outline-none ${
                   validationErrors.employmentDetails 
                     ? 'border-red-500 bg-red-50' 
                     : 'border-gray-400 focus:border-blue-500'
                 }`}
-                rows={5}
-                placeholder="Describe any outside employment or business activities..."
+            rows={5}
+            placeholder="Describe any outside employment or business activities..."
                 data-error={validationErrors.employmentDetails ? 'true' : undefined}
-              />
-            )}
-          </div>
+          />
+        )}
+      </div>
         </>
       )}
     </div>

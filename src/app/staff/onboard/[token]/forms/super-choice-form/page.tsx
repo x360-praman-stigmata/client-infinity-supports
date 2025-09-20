@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { getStaffFormComponent } from '@/app/forms/staff-registry';
 import { toast } from 'react-hot-toast';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function SuperChoiceFormPage() {
   const { token } = useParams<{ token: string }>();
@@ -143,12 +144,11 @@ export default function SuperChoiceFormPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading form...</p>
-        </div>
-      </div>
+      <LoadingSpinner 
+        title="Loading Form" 
+        message="Please wait while we load the form..."
+        size="md"
+      />
     );
   }
 

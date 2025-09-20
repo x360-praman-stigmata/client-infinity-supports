@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface FormStatus {
   key: string;
@@ -98,19 +99,20 @@ export default function StaffOnboardingPage() {
                   name: form.name,
                   route: form.route,
                   completed: isCompleted,
-                  enabled: index === 0 || FORM_SEQUENCE.slice(0, index).every(f => !!data.submissions[f.key])
+                  enabled: false // Will be set below
                 };
               });
-
+              
+              // Enable forms based on completion status
               const lastCompletedIndex = formStatuses.findLastIndex(f => f.completed);
               formStatuses.forEach((form, index) => {
                 form.enabled = index <= lastCompletedIndex + 1;
               });
-
+              
               setForms(formStatuses);
             }
           } catch (error) {
-            console.error('Error refreshing data:', error);
+            console.error('Error refreshing staff data:', error);
           }
         };
         loadStaffData();
@@ -123,18 +125,20 @@ export default function StaffOnboardingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
+      <LoadingSpinner 
+        title="Loading Staff Data" 
+        message="Please wait while we prepare your onboarding forms..."
+        size="md"
+      />
     );
   }
 
   if (!staff) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg text-center">
-          <h1 className="text-xl font-semibold text-red-600 mb-4">Invalid Link</h1>
-          <p className="text-gray-600">This onboarding link is invalid or has expired.</p>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Invalid Token</h1>
+          <p className="text-gray-600">The onboarding link is invalid or has expired.</p>
         </div>
       </div>
     );
@@ -144,9 +148,13 @@ export default function StaffOnboardingPage() {
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Staff Onboarding</h1>
-          <p className="text-gray-600">Welcome {staff.firstName} {staff.surname}</p>
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Welcome, {staff.firstName} {staff.surname}!
+          </h1>
+          <p className="text-gray-600">
+            Please complete the following onboarding forms to get started.
+          </p>
           <p className="text-sm text-gray-500 mt-2">
             Complete all forms in order to finish your onboarding process.
           </p>
@@ -201,39 +209,22 @@ export default function StaffOnboardingPage() {
                   {form.enabled ? (
                     <Link
                       href={`/staff/onboard/${token}/forms/${form.route}`}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         form.completed
-                          ? 'bg-green-500 hover:bg-green-600 text-white'
-                          : 'bg-blue-500 hover:bg-blue-600 text-white'
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
                       }`}
                     >
-                      {form.completed ? 'Edit' : 'Start'}
+                      {form.completed ? 'View' : 'Start'}
                     </Link>
                   ) : (
-                    <button 
-                      disabled 
-                      className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
-                    >
+                    <span className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-400">
                       Locked
-                    </button>
+                    </span>
                   )}
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Progress */}
-          <div className="mt-8 pt-6 border-t">
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-              <span>Progress</span>
-              <span>{forms.filter(f => f.completed).length} of {forms.length} completed</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(forms.filter(f => f.completed).length / forms.length) * 100}%` }}
-              ></div>
-            </div>
           </div>
         </div>
       </div>

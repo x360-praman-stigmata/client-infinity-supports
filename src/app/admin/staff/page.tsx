@@ -13,6 +13,7 @@ export default function StaffListPage() {
   const [modalData, setModalData] = useState<{ url: string; expiresAt: string } | null>(null);
   const [modalName, setModalName] = useState('');
   const [modalId, setModalId] = useState<number>(0);
+  const [generatingLink, setGeneratingLink] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -24,6 +25,19 @@ export default function StaffListPage() {
     }
   };
 
+  const handleGenerateLink = async (staffId: number, firstName: string, surname: string) => {
+    setGeneratingLink(staffId);
+    try {
+      const res = await generateStaffLink(staffId);
+      setModalData({ url: res.link, expiresAt: res.expiresAt });
+      setModalName(`${firstName} ${surname}`);
+      setModalId(staffId);
+      setModalOpen(true);
+    } finally {
+      setGeneratingLink(null);
+    }
+  };
+
   useEffect(() => { load(); }, []);
 
   return (
@@ -32,7 +46,6 @@ export default function StaffListPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-0">
           <div className="flex items-center gap-6">
             <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-400 text-white shadow-lg">
-              {/* icon placeholder */}
               <span className="text-2xl sm:text-3xl">👥</span>
             </div>
             <div>
@@ -65,7 +78,18 @@ export default function StaffListPage() {
             <Link href="/admin/staff/create" className="px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl">Add New Staff</Link>
           </div>
           {loading ? (
-            <div className="text-gray-500 text-sm">Loading…</div>
+            <div className="flex justify-center items-center h-64">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-t-rose-500 border-rose-200 rounded-full animate-spin mx-auto mb-4"></div>
+                <h3 className="text-lg font-bold text-slate-800 mb-2">Loading Staff</h3>
+                <p className="text-slate-600">Please wait while we fetch staff data...</p>
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                  <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                </div>
+              </div>
+            </div>
           ) : rows.length === 0 ? (
             <div className="text-gray-500 text-sm">No staff yet. Use "Add New Staff" to create one.</div>
           ) : (
@@ -96,13 +120,14 @@ export default function StaffListPage() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <button onClick={async ()=>{
-                          const res = await generateStaffLink(s.id);
-                          setModalData({ url: res.link, expiresAt: res.expiresAt });
-                          setModalName(`${s.firstName} ${s.surname}`);
-                          setModalId(s.id);
-                          setModalOpen(true);
-                        }} className="px-3 py-2 rounded-lg bg-rose-500 text-white hover:bg-rose-600 text-sm">Generate Link</button>
+                        <button 
+                          onClick={() => handleGenerateLink(s.id, s.firstName, s.surname)}
+                          disabled={generatingLink === s.id}
+                          className="px-3 py-2 rounded-lg bg-rose-500 text-white hover:bg-rose-600 text-sm disabled:opacity-50"
+                        >
+                          {generatingLink === s.id && <div className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin inline-block mr-2"></div>}
+                          {generatingLink === s.id ? 'Generating...' : 'Generate Link'}
+                        </button>
                         <Link 
                           href={`/admin/staff/${s.id}`}
                           className="px-3 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 text-sm ml-2"
@@ -122,5 +147,3 @@ export default function StaffListPage() {
     </div>
   );
 }
-
-

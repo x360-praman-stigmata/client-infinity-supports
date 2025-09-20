@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import EmployeeWelcomeAckForm, { EmployeeWelcomeAckFormRef } from '../../components/EmployeeWelcomeAckForm';
 import { getStaffFormComponent } from '@/app/forms/staff-registry';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function EmployeeWelcomeFormPage() {
   const { token } = useParams<{ token: string }>();
@@ -63,9 +64,11 @@ export default function EmployeeWelcomeFormPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
+      <LoadingSpinner 
+        title="Loading Form" 
+        message="Please wait while we load the form..."
+        size="md"
+      />
     );
   }
 

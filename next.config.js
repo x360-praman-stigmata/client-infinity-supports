@@ -2,39 +2,40 @@
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
-    dirs: [], // Don't run ESLint on any directories during build
-  },
-  typescript: {
-    ignoreBuildErrors: true, // Ignore TypeScript errors during build
-  },
-  reactStrictMode: true,
-  eslint: {
-    // Only run ESLint on these directories during production builds
     dirs: ["src/app", "src/components", "src/lib", "src/hooks", "src/types"],
   },
-  // This setting helps with hydration mismatches by suppressing the warnings in development
-  // It doesn't affect production builds
-  onDemandEntries: {
-    // period (in ms) where the server will keep pages in the buffer
-    maxInactiveAge: 25 * 1000,
-    // number of pages that should be kept simultaneously without being disposed
-    pagesBufferLength: 2,
+  typescript: {
+    ignoreBuildErrors: true,
   },
-  // Add this to suppress hydration warnings in development
-  compiler: {
-    // Suppress hydration warnings for attributes like fdprocessedid
-    reactRemoveProperties:
-      process.env.NODE_ENV === "production"
-        ? { properties: ["^data-testid$", "^fdprocessedid$"] }
-        : false,
-  },
-  // Exclude generated files from the build
+  reactStrictMode: true,
   experimental: {
     excludeDefaultMomentLocales: true,
   },
-  // Webpack configuration to exclude problematic files
-  webpack: (config, { isServer }) => {
-    // Exclude Prisma generated files from webpack
+  webpack: (config, { isServer, dev }) => {
+    // Fix ChunkLoadError by improving chunk loading
+    if (!isServer && dev) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: {
+              minChunks: 1,
+              priority: -20,
+              reuseExistingChunk: true,
+            },
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              priority: -10,
+              chunks: 'all',
+            },
+          },
+        },
+      };
+    }
+
+    // Exclude Prisma generated files
     config.externals = config.externals || [];
     if (!isServer) {
       config.externals.push({
@@ -42,15 +43,10 @@ const nextConfig = {
       });
     }
 
-    // Ignore specific files during build
+    // Ignore generated files
     config.module.rules.push({
       test: /\.(js|ts|tsx)$/,
-      exclude: [
-        /node_modules/,
-        /src\/generated/,
-        /generated/,
-        /prisma\/generated/,
-      ],
+      exclude: [/node_modules/, /src\/generated/, /generated/, /prisma\/generated/],
     });
 
     return config;
@@ -60,7 +56,7 @@ const nextConfig = {
       {
         source: "/",
         destination: "/admin/login",
-        permanent: true, // or false if it's temporary
+        permanent: true,
       },
     ];
   },

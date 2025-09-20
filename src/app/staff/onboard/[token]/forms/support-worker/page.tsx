@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import SupportWorkerForm, { SupportWorkerFormRef } from '../../components/SupportWorkerForm';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function SupportWorkerFormPage() {
   const { token } = useParams<{ token: string }>();
@@ -54,9 +55,11 @@ export default function SupportWorkerFormPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
+      <LoadingSpinner 
+        title="Loading Form" 
+        message="Please wait while we load the form..."
+        size="md"
+      />
     );
   }
 
