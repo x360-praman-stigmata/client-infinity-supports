@@ -6,15 +6,16 @@ interface ConflictFormPage3Props {
   formData: Record<string, any>;
   readOnly?: boolean;
   onDataChange?: (data: any) => void;
+  validationErrors?: Record<string, string>;
 }
 
-export default function ConflictFormPage3({ formData, readOnly = false, onDataChange }: ConflictFormPage3Props) {
+export default function ConflictFormPage3({ formData, readOnly = false, onDataChange, validationErrors = {} }: ConflictFormPage3Props) {
   const employeeSigRef = useRef<SignatureCanvasRef>(null);
   const reviewerSigRef = useRef<SignatureCanvasRef>(null);
 
   const handleInputChange = (field: string, value: any) => {
     if (onDataChange) {
-      onDataChange({ ...formData, [field]: value });
+      onDataChange({ [field]: value });
     }
   };
 
@@ -27,7 +28,7 @@ export default function ConflictFormPage3({ formData, readOnly = false, onDataCh
   };
 
   return (
-    <div className="bg-white text-black px-8 py-8 max-w-[210mm] mx-auto font-['Open_Sans'] shadow-lg" style={{ minHeight: '297mm' }}>
+    <div className="bg-white text-black px-8 py-8 max-w-[210mm] mx-auto font-['Open_Sans'] shadow-lg min-h-[297mm]">
       <div className="flex justify-center mb-4">
         <img
           src="/infinity_logo.png"
@@ -43,7 +44,7 @@ export default function ConflictFormPage3({ formData, readOnly = false, onDataCh
       </p>
 
       <p className="font-bold mb-3">
-        Section 4: Acknowledgment and Certification
+        Section 4: Acknowledgment and Certification <span className="text-red-500">*</span>
       </p>
       <p className="mb-6 text-sm">
         I certify that the information provided above is complete and accurate
@@ -56,7 +57,7 @@ export default function ConflictFormPage3({ formData, readOnly = false, onDataCh
 
       <div className="mb-6 space-y-4">
         <div className="flex items-center">
-          <span className="font-bold w-48">Employee Signature:</span>
+          <span className="font-bold w-48">Employee Signature: <span className="text-red-500">*</span></span>
           <div className="flex-1">
             {readOnly ? (
               <div className="border border-gray-400 p-2 min-h-[80px] flex items-center justify-center">
@@ -85,7 +86,7 @@ export default function ConflictFormPage3({ formData, readOnly = false, onDataCh
           </div>
         </div>
         <div className="flex items-center">
-          <span className="font-bold w-48">Date:</span>
+          <span className="font-bold w-48">Employee Date: <span className="text-red-500">*</span></span>
           {readOnly ? (
             <span className="font-normal border-b border-gray-400 px-2 py-1 min-w-[300px]">
               {formData.employeeDate || "_______________"}
@@ -95,7 +96,12 @@ export default function ConflictFormPage3({ formData, readOnly = false, onDataCh
               type="date"
               value={formData.employeeDate || ""}
               onChange={(e) => handleInputChange('employeeDate', e.target.value)}
-              className="font-normal border-b border-gray-400 px-2 py-1 min-w-[300px] focus:outline-none focus:border-blue-500"
+              className={`font-normal border-b px-2 py-1 min-w-[300px] focus:outline-none ${
+                validationErrors.employeeDate 
+                  ? 'border-red-500 bg-red-50' 
+                  : 'border-gray-400 focus:border-blue-500'
+              }`}
+              data-error={validationErrors.employeeDate ? 'true' : undefined}
             />
           )}
         </div>

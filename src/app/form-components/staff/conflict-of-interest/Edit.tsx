@@ -43,6 +43,10 @@ interface ConflictFormData {
   reviewerDate: string;
 }
 
+interface ValidationErrors {
+  [key: string]: string;
+}
+
 interface ConflictFormEditProps {
   initialData?: Partial<ConflictFormData>;
   onDataChange?: (data: ConflictFormData) => void;
@@ -99,10 +103,16 @@ export default function ConflictFormEdit({
   });
 
   const [isInitialized, setIsInitialized] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDataChange = useCallback((newData: Partial<ConflictFormData>) => {
     setFormData(prev => ({ ...prev, ...newData }));
-  }, []);
+    // Clear validation errors when user makes changes
+    if (Object.keys(validationErrors).length > 0) {
+      setValidationErrors({});
+    }
+  }, [validationErrors]);
 
   // Use useEffect to call onDataChange when formData changes (but not on initial render)
   useEffect(() => {
@@ -116,6 +126,59 @@ export default function ConflictFormEdit({
     setIsInitialized(true);
   }, []);
 
+  const validateForm = useCallback((): boolean => {
+    const errors: ValidationErrors = {};
+
+    // Validate Employee Information
+    if (!formData.name?.trim()) {
+      errors.name = 'Employee name is required';
+    }
+    if (!formData.position?.trim()) {
+      errors.position = 'Employee position is required';
+    }
+    if (!formData.department?.trim()) {
+      errors.department = 'Employee department is required';
+    }
+    if (!formData.date) {
+      errors.date = 'Date is required';
+    }
+
+    // Validate Section 1: Conflict of Interest
+    if (!formData.noConflict && !formData.yesConflict) {
+      errors.conflictOfInterest = 'Please select either "No conflict" or "Yes conflict"';
+    }
+    if (formData.yesConflict && (!formData.conflictDescription?.trim())) {
+      errors.conflictDescription = 'Conflict description is required when "Yes conflict" is selected';
+    }
+
+    // Validate Section 2: Vendor Relationships
+    if (!formData.vendorNo && !formData.vendorYes) {
+      errors.vendorRelationship = 'Please select either "No" or "Yes" for vendor relationships';
+    }
+    if (formData.vendorYes && (!formData.vendorDetails?.trim())) {
+      errors.vendorDetails = 'Vendor relationship details are required when "Yes" is selected';
+    }
+
+    // Validate Section 3: Outside Employment
+    if (!formData.employmentNo && !formData.employmentYes) {
+      errors.employmentRelationship = 'Please select either "No" or "Yes" for outside employment';
+    }
+    if (formData.employmentYes && (!formData.employmentDetails?.trim())) {
+      errors.employmentDetails = 'Employment details are required when "Yes" is selected';
+    }
+
+    // Validate Section 4: Acknowledgment
+    if (!formData.employeeSignature?.trim()) {
+      errors.employeeSignature = 'Employee signature is required';
+    }
+    if (!formData.employeeDate) {
+      errors.employeeDate = 'Employee signature date is required';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [formData]);
+
   const handleSave = useCallback(async () => {
     if (onSave) {
       await onSave(formData);
@@ -123,10 +186,29 @@ export default function ConflictFormEdit({
   }, [formData, onSave]);
 
   const handleSubmit = useCallback(async () => {
-    if (onSubmit) {
-      await onSubmit(formData);
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const isValid = validateForm();
+      
+      if (!isValid) {
+        // Scroll to first error
+        const firstErrorElement = document.querySelector('[data-error]');
+        if (firstErrorElement) {
+          firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+
+      if (onSubmit) {
+        await onSubmit(formData);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [formData, onSubmit]);
+  }, [formData, onSubmit, validateForm, isSubmitting]);
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
@@ -162,10 +244,71 @@ export default function ConflictFormEdit({
 
         {/* Form Pages */}
         <div className="space-y-8">
-          <ConflictFormPage1 formData={formData} readOnly={readOnly} onDataChange={handleDataChange} />
-          <ConflictFormPage2 formData={formData} readOnly={readOnly} onDataChange={handleDataChange} />
-          <ConflictFormPage3 formData={formData} readOnly={readOnly} onDataChange={handleDataChange} />
+          <ConflictFormPage1 
+            formData={formData} 
+            readOnly={readOnly} 
+            onDataChange={handleDataChange}
+            validationErrors={validationErrors}
+          />
+          <ConflictFormPage2 
+            formData={formData} 
+            readOnly={readOnly} 
+            onDataChange={handleDataChange}
+            validationErrors={validationErrors}
+          />
+          <ConflictFormPage3 
+            formData={formData} 
+            readOnly={readOnly} 
+            onDataChange={handleDataChange}
+            validationErrors={validationErrors}
+          />
         </div>
+
+        {/* Error Summary */}
+        {Object.keys(validationErrors).length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
+            <h3 className="text-red-800 font-semibold mb-2">Please fix the following errors:</h3>
+            <ul className="text-red-700 space-y-1">
+              {Object.entries(validationErrors).map(([field, error]) => (
+                <li key={field} className="flex items-start">
+                  <span className="mr-2">•</span>
+                  <span>{error}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Submit Buttons */}
+        {showButtons && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => window.history.back()}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                ← Back to Forms
+              </button>
+              
+              <div className="flex gap-4">
+                <button
+                  onClick={handleSave}
+                  disabled={isSubmitting}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Save Draft
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit & Continue'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

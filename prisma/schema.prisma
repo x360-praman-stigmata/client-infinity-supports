@@ -74,6 +74,7 @@ model Staff {
   bullyingHarassmentTraining StaffBullyingHarassmentTraining?
   bullyingTraining           StaffBullyingTraining?
   ndisCodeOfConduct          StaffNdisCodeOfConduct?
+  conflictOfInterest         StaffConflictOfInterest?
 }
 
 model StaffFormSubmission {
@@ -190,6 +191,20 @@ model StaffBullyingTraining {
 
 // Specialized storage for NDIS Code of Conduct form
 model StaffNdisCodeOfConduct {
+  id             Int       @id @default(autoincrement())
+  staffId        Int       @unique
+  data           Json
+  // Signature fields like client forms
+  staffSignature String? // Staff's signature for this form
+  staffSignedAt  DateTime? // When staff signed this form
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  staff Staff @relation(fields: [staffId], references: [id])
+}
+
+// Specialized storage for Conflict of Interest Disclosure form
+model StaffConflictOfInterest {
   id             Int       @id @default(autoincrement())
   staffId        Int       @unique
   data           Json
