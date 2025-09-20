@@ -4,6 +4,92 @@ import { set } from "date-fns";
 import React from "react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import OverlaySignatureBox from "./OverlaySignaturePad";
+import { toast } from "react-hot-toast";
+
+// Validation Utilities
+const validateString = (value: string, fieldName: string): string | null => {
+  if (!value || value.trim().length === 0) {
+    return `${fieldName} is required - please fill this field`;
+  }
+  if (value.trim().length < 2) {
+    return `${fieldName} must be at least 2 characters`;
+  }
+  // Check if contains only letters, spaces, and common punctuation
+  if (!/^[a-zA-Z\s\-'\.]+$/.test(value.trim())) {
+    return `${fieldName} must contain only letters and spaces`;
+  }
+  return null;
+};
+
+const validateNumber = (value: string, fieldName: string, requiredLength?: number): string | null => {
+  if (!value || value.trim().length === 0) {
+    return `${fieldName} is required`;
+  }
+  if (!/^\d+$/.test(value)) {
+    return `${fieldName} must contain only numbers`;
+  }
+  if (requiredLength && value.length !== requiredLength) {
+    return `${fieldName} must be exactly ${requiredLength} digits - all boxes must be filled`;
+  }
+  // Check for empty spaces in the middle (incomplete filling)
+  if (value.includes(' ')) {
+    return `${fieldName} must be completely filled - no empty boxes allowed`;
+  }
+  return null;
+};
+
+const validateDate = (date: { day: string; month: string; year: string }, fieldName: string): string | null => {
+  if (!date.day || !date.month || !date.year) {
+    return `${fieldName} is required`;
+  }
+  
+  // Check if all date boxes are filled (no empty spaces)
+  if (date.day.length !== 2 || date.month.length !== 2 || date.year.length !== 4) {
+    return `${fieldName} must be completely filled - all date boxes must be filled`;
+  }
+  
+  const day = parseInt(date.day);
+  const month = parseInt(date.month);
+  const year = parseInt(date.year);
+  
+  if (isNaN(day) || isNaN(month) || isNaN(year)) {
+    return `${fieldName} must contain only numbers`;
+  }
+  
+  if (day < 1 || day > 31) {
+    return `${fieldName} day must be between 01 and 31`;
+  }
+  
+  if (month < 1 || month > 12) {
+    return `${fieldName} month must be between 01 and 12`;
+  }
+  
+  if (year < 1900 || year > 2100) {
+    return `${fieldName} year must be between 1900 and 2100`;
+  }
+  
+  // Check if date is valid
+  const dateObj = new Date(year, month - 1, day);
+  if (dateObj.getDate() !== day || dateObj.getMonth() !== month - 1 || dateObj.getFullYear() !== year) {
+    return `${fieldName} is not a valid date`;
+  }
+  
+  return null;
+};
+
+const validateCheckbox = (checked: boolean, fieldName: string): string | null => {
+  if (!checked) {
+    return `${fieldName} must be checked - please tick this box`;
+  }
+  return null;
+};
+
+const validateSignature = (signature: string | null, fieldName: string): string | null => {
+  if (!signature) {
+    return `${fieldName} is required - please provide your signature`;
+  }
+  return null;
+};
 
 // ✅ Character-box overlay input
 interface OverlayCharInputProps {
@@ -18,6 +104,7 @@ interface OverlayCharInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   readOnly?: boolean;
+  type?: 'number' | 'text'; // Validation type
 }
 
 function OverlayCharInput({
@@ -31,6 +118,7 @@ function OverlayCharInput({
   value,
   onChange,
   readOnly = false,
+  type = 'text',
 }: OverlayCharInputProps) {
   const [values, setValues] = useState<string[]>(() =>
     Array.from({ length }, (_, i) => value[i] || "")
@@ -46,11 +134,26 @@ function OverlayCharInput({
     : boxWidth || 32;
 
   const handleChange = (val: string, idx: number) => {
+    // Input validation based on type
+    let filteredVal = val.slice(-1);
+    
+    if (type === 'number') {
+      // Only allow numbers
+      if (!/^\d$/.test(filteredVal) && filteredVal !== '') {
+        return; // Don't update if not a number
+      }
+    } else if (type === 'text') {
+      // Only allow letters, spaces, and common punctuation
+      if (!/^[a-zA-Z\s\-'\.]$/.test(filteredVal) && filteredVal !== '') {
+        return; // Don't update if not valid text
+      }
+    }
+    
     const newValues = [...values];
-    newValues[idx] = val.slice(-1);
+    newValues[idx] = filteredVal;
     setValues(newValues);
     onChange(newValues.join("")); // Call onChange directly when user changes input
-    if (val && idx < length - 1) inputsRef.current[idx + 1]?.focus();
+    if (filteredVal && idx < length - 1) inputsRef.current[idx + 1]?.focus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
@@ -328,6 +431,16 @@ function OverlayMultiRowCharInput({
 
 
 
+interface OverlayGroupedCharInputProps {
+  groups: Array<{ top: number; left: number; length: number }>;
+  boxWidth?: number;
+  boxHeight?: number;
+  value: string;
+  onChange: (value: string) => void;
+  readOnly?: boolean;
+  type?: 'number' | 'text';
+}
+
 function OverlayGroupedCharInput({
   groups,
   boxWidth = 28,
@@ -335,7 +448,8 @@ function OverlayGroupedCharInput({
   value,
   onChange,
   readOnly = false,
-}: any) {
+  type = 'text',
+}: OverlayGroupedCharInputProps) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const totalLength = groups.reduce((acc, g) => acc + g.length, 0);
 
@@ -352,12 +466,27 @@ function OverlayGroupedCharInput({
   }, [value]);
 
   const handleChange = (val: string, index: number) => {
+    // Input validation based on type
+    let filteredVal = val.slice(-1);
+    
+    if (type === 'number') {
+      // Only allow numbers
+      if (!/^\d$/.test(filteredVal) && filteredVal !== '') {
+        return; // Don't update if not a number
+      }
+    } else if (type === 'text') {
+      // Only allow letters, spaces, and common punctuation
+      if (!/^[a-zA-Z\s\-'\.]$/.test(filteredVal) && filteredVal !== '') {
+        return; // Don't update if not valid text
+      }
+    }
+    
     const newChars = [...chars];
-    newChars[index] = val.slice(-1);
+    newChars[index] = filteredVal;
     setChars(newChars);
     onChange(newChars.join("").trimEnd());
 
-    if (val && index < totalLength - 1) {
+    if (filteredVal && index < totalLength - 1) {
       inputsRef.current[index + 1]?.focus();
     }
   };
@@ -611,7 +740,68 @@ export default function TFNOverlayForm({
     }
   }, [onDataChange, getFormData]);
 
+  // Comprehensive validation function
+  const validateForm = (): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+
+    // Required text fields
+    const surnameError = validateString(surname, "Surname");
+    if (surnameError) errors.push(surnameError);
+
+    const firstNameError = validateString(firstName, "First Name");
+    if (firstNameError) errors.push(firstNameError);
+
+    // Required number fields
+    const tfnError = validateNumber(tfn, "Tax File Number (TFN)", 9);
+    if (tfnError) errors.push(tfnError);
+
+    const postcodeError = validateNumber(postcode, "Postcode", 4);
+    if (postcodeError) errors.push(postcodeError);
+
+    // ABN validation (11 digits)
+    const abnError = validateNumber(abnno, "Australian Business Number (ABN)", 11);
+    if (abnError) errors.push(abnError);
+
+    // Branch number validation (3 digits)
+    const branchError = validateNumber(branchNo, "Branch Number", 3);
+    if (branchError) errors.push(branchError);
+
+    // Date validation
+    const dobError = validateDate(dob, "Date of Birth");
+    if (dobError) errors.push(dobError);
+
+    // Required checkboxes
+    if (!subscribe) {
+      errors.push("You must agree to the terms - please tick the subscription checkbox");
+    }
+
+    // Required signatures
+    const payerSignatureError = validateSignature(payerSignature, "Payer Signature");
+    if (payerSignatureError) errors.push(payerSignatureError);
+
+    const payeeSignatureError = validateSignature(payeeSignature, "Payee Signature");
+    if (payeeSignatureError) errors.push(payeeSignatureError);
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  };
+
   const handleSave = () => {
+    const validation = validateForm();
+    
+    if (!validation.isValid) {
+      // Show all validation errors
+      validation.errors.forEach(error => {
+        toast.error(error, {
+          duration: 5000,
+          position: 'top-center',
+        });
+      });
+      return;
+    }
+
     const formData = {
       tfn,
       surname,
@@ -656,8 +846,10 @@ export default function TFNOverlayForm({
     };
 
     console.log("✅ Saved Form Data:", formData);
-    alert("Form data logged in console ✅");
-
+    toast.success("Form data saved successfully! ✅", {
+      duration: 3000,
+      position: 'top-center',
+    });
   }
 
   const handleClear = () => {
@@ -752,7 +944,7 @@ export default function TFNOverlayForm({
       <img src="/tax-3img.jpg" className="absolute inset-0 w-full h-full" alt="Form" />
 
       {/* 🔹 TFN */}
-      <OverlayCharInput top={120} left={147} length={9} totalWidth={250} boxHeight={25} value={tfn} onChange={setTfn} readOnly={readOnly} />
+      <OverlayCharInput top={120} left={147} length={9} totalWidth={250} boxHeight={25} value={tfn} onChange={setTfn} readOnly={readOnly} type="number" />
 
       <OverlayCheckbox top={153} left={372} checked={check1} onChange={setCheck1} boxWidth={30} boxHeight={30} readOnly={readOnly} />
       <OverlayCheckbox top={185} left={372} checked={check2} onChange={setCheck2} boxWidth={30} boxHeight={30} readOnly={readOnly} />
@@ -765,11 +957,11 @@ export default function TFNOverlayForm({
       <OverlayCheckbox top={250} left={372} checked={check7} onChange={setCheck7} boxWidth={30} boxHeight={30} readOnly={readOnly} />
 
       
-      <OverlayCharInput top={283} left={30} length={19} totalWidth={370} boxHeight={25} value={surname} onChange={setSurname} readOnly={readOnly} />
+      <OverlayCharInput top={283} left={30} length={19} totalWidth={370} boxHeight={25} value={surname} onChange={setSurname} readOnly={readOnly} type="text" />
 
-      <OverlayCharInput top={320} left={30} length={19} totalWidth={370} boxHeight={25} value={firstName} onChange={setFirstName} readOnly={readOnly} />
-      <OverlayCharInput top={355} left={30} length={19} totalWidth={370} boxHeight={25} value={otherName} onChange={setOtherName} readOnly={readOnly} />
-      <OverlayCharInput top={415} left={30} length={19} totalWidth={370} boxHeight={25} value={anotherName} onChange={setAnotherName} readOnly={readOnly} />
+      <OverlayCharInput top={320} left={30} length={19} totalWidth={370} boxHeight={25} value={firstName} onChange={setFirstName} readOnly={readOnly} type="text" />
+      <OverlayCharInput top={355} left={30} length={19} totalWidth={370} boxHeight={25} value={otherName} onChange={setOtherName} readOnly={readOnly} type="text" />
+      <OverlayCharInput top={415} left={30} length={19} totalWidth={370} boxHeight={25} value={anotherName} onChange={setAnotherName} readOnly={readOnly} type="text" />
 
     {/* DOB */}
     <OverlayDateCharInput
@@ -800,11 +992,11 @@ export default function TFNOverlayForm({
 
 
       <OverlayCharInput top={570} left={30} length={19} totalWidth={370} boxHeight={25} value={town} onChange={setTown} readOnly={readOnly} />
-      <OverlayCharInput top={605} left={30} length={3} totalWidth={70} boxHeight={25} value={state} onChange={setState} readOnly={readOnly} />
-      <OverlayCharInput top={605} left={125} length={4} totalWidth={77} boxHeight={25} value={postcode} onChange={setPostcode} readOnly={readOnly} />
+      <OverlayCharInput top={605} left={30} length={3} totalWidth={70} boxHeight={25} value={state} onChange={setState} readOnly={readOnly} type="text" />
+      <OverlayCharInput top={605} left={125} length={4} totalWidth={77} boxHeight={25} value={postcode} onChange={setPostcode} readOnly={readOnly} type="number" />
 
 
-            <OverlayCharInput top={708} left={320} length={3} totalWidth={70} boxHeight={25} value={branchNo} onChange={setBranchNo} readOnly={readOnly} />
+            <OverlayCharInput top={708} left={320} length={3} totalWidth={70} boxHeight={25} value={branchNo} onChange={setBranchNo} readOnly={readOnly} type="number" />
 
           <OverlayGroupedCharInput
   groups={[
@@ -818,6 +1010,7 @@ export default function TFNOverlayForm({
   value={abnno}
   onChange={setAbnNo}
   readOnly={readOnly}
+  type="number"
 />
 
 <OverlaySquareRadioGroup

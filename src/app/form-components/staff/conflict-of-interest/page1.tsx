@@ -9,18 +9,18 @@ export default function ConflictFormPage1({ formData }: ConflictFormPage1Props) 
   return (
     <div className="bg-white text-black px-6 py-6 max-w-3xl mx-auto font-['Open_Sans']">
       <div className="flex justify-center mb-2">
-        <img
-          src="/infinity_logo.png"
-          alt="Infinity Supports WA logo with stylized infinity symbol in muted red above text"
-          className="w-[150px] h-[70px] object-contain"
-          width={200}
-          height={80}
-        />
-      </div>
+          <img
+            src="/infinity_logo.png"
+            alt="Infinity Supports WA logo with stylized infinity symbol in muted red above text"
+            className="w-[350px] h-[160px] object-contain"
+            width={350}
+            height={160}
+          />
+        </div>
 
-      <p className="text-center text-[9px] font-semibold mb-4">
-        Conflict of Interest Disclosure Form
-      </p>
+        <p className="text-center text-[20px] font-bold mb-6">
+          Conflict of Interest Disclosure Form
+        </p>
 
       <p className="font-bold mb-1">Employee Information:</p>
       <ul className="list-disc list-inside mb-6 space-y-2">
@@ -86,18 +86,47 @@ export default function ConflictFormPage1({ formData }: ConflictFormPage1Props) 
       <p className="font-bold mb-2">
         Description of the potential conflict of interest:
       </p>
-      <div className="border border-gray-400 p-2 mb-6 min-h-[80px] text-sm">
-        {formData.conflictDescription || "____________________________"}
+      <div className="mb-6">
+        {Array.from({ length: 7 }).map((_, index) => (
+          <div key={index} className="border-b border-gray-400 h-6 mb-2"></div>
+        ))}
       </div>
+
+      <hr className="border-t border-gray-400 mb-6" />
 
       <p className="font-bold mb-2">
         Section 2: Relationships with Vendors, Clients, or Competitors
       </p>
-      <p className="text-sm">
+      <p className="mb-4 text-sm">
         Do you or any immediate family members have any financial interest,
         employment, or any other relationship with any vendors, clients, or
         competitors of Infinity Supports WA?
       </p>
+
+      <div className="mb-6 text-sm space-y-2">
+        <div>
+          <input
+            className="align-middle"
+            type="checkbox"
+            checked={!!formData.vendorNo}
+            readOnly
+          />
+          <label className="align-middle ml-2">
+            No
+          </label>
+        </div>
+        <div>
+          <input
+            className="align-middle"
+            type="checkbox"
+            checked={!!formData.vendorYes}
+            readOnly
+          />
+          <label className="align-middle ml-2">
+            Yes (If yes, please describe the relationship below.)
+          </label>
+        </div>
+      </div>
     </div>
   );
 }
