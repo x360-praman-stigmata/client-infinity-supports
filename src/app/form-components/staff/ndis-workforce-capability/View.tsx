@@ -2,7 +2,32 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-export default function NdisWorkforceCapabilityView({ excludeLastPage = false, children, data = {} }: { excludeLastPage?: boolean; children?: React.ReactNode; data?: any }) {
+interface NdisWorkforceCapabilityViewProps {
+  excludeLastPage?: boolean;
+  children?: React.ReactNode;
+  data?: any;
+  onDataChange?: (data: any) => void;
+  readOnly?: boolean;
+  showOverlay?: boolean;
+  overlayFields?: Record<string, {
+    label: string;
+    type: string;
+    value: any;
+    onChange: (value: any) => void;
+    placeholder?: string;
+    required?: boolean;
+  }>;
+}
+
+export default function NdisWorkforceCapabilityView({ 
+  excludeLastPage = false, 
+  children, 
+  data = {},
+  onDataChange,
+  readOnly = false,
+  showOverlay = false,
+  overlayFields = {}
+}: NdisWorkforceCapabilityViewProps) {
   const pdfContainerRef = useRef<HTMLDivElement>(null);
   const hasRenderedRef = useRef(false);
   const [isRendering, setIsRendering] = useState(false);
@@ -103,7 +128,7 @@ export default function NdisWorkforceCapabilityView({ excludeLastPage = false, c
 
   return (
     <div className="bg-slate-50 py-8">
-      <div className="bg-white w-full max-w-[900px] mx-auto rounded-xl shadow border p-4">
+      <div className="bg-white w-full max-w-[900px] mx-auto rounded-xl shadow border p-4 relative">
         {isRendering && (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -111,6 +136,77 @@ export default function NdisWorkforceCapabilityView({ excludeLastPage = false, c
           </div>
         )}
         <div ref={pdfContainerRef} className="w-full" />
+        
+        {/* Overlay Fields for Editing */}
+        {showOverlay && overlayFields && Object.keys(overlayFields).length > 0 && (
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Name Field Overlay */}
+            {overlayFields.name && (
+              <div 
+                className="absolute pointer-events-auto"
+                style={{ 
+                  top: '75%', 
+                  left: '15%', 
+                  width: '35%',
+                  transform: 'translateY(-50%)'
+                }}
+              >
+                <input
+                  type="text"
+                  value={overlayFields.name.value || ''}
+                  onChange={(e) => overlayFields.name.onChange(e.target.value)}
+                  placeholder={overlayFields.name.placeholder || 'Enter your name'}
+                  className="w-full px-2 py-1 text-sm bg-white border border-blue-500 rounded shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  required={overlayFields.name.required}
+                />
+              </div>
+            )}
+            
+            {/* Signature Field Overlay */}
+            {overlayFields.signature && (
+              <div 
+                className="absolute pointer-events-auto"
+                style={{ 
+                  top: '85%', 
+                  left: '15%', 
+                  width: '35%',
+                  transform: 'translateY(-50%)'
+                }}
+              >
+                <input
+                  type="text"
+                  value={overlayFields.signature.value || ''}
+                  onChange={(e) => overlayFields.signature.onChange(e.target.value)}
+                  placeholder={overlayFields.signature.placeholder || 'Enter your signature'}
+                  className="w-full px-2 py-1 text-sm bg-white border border-blue-500 rounded shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  required={overlayFields.signature.required}
+                />
+              </div>
+            )}
+            
+            {/* Date Field Overlay */}
+            {overlayFields.date && (
+              <div 
+                className="absolute pointer-events-auto"
+                style={{ 
+                  top: '85%', 
+                  left: '55%', 
+                  width: '25%',
+                  transform: 'translateY(-50%)'
+                }}
+              >
+                <input
+                  type="date"
+                  value={overlayFields.date.value || ''}
+                  onChange={(e) => overlayFields.date.onChange(e.target.value)}
+                  className="w-full px-2 py-1 text-sm bg-white border border-blue-500 rounded shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  required={overlayFields.date.required}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        
         {children}
         {error && (
           <div className="text-sm text-red-600 mt-2">

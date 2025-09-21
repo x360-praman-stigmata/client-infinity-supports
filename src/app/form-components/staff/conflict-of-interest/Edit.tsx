@@ -324,14 +324,22 @@ export default function ConflictFormEdit({
                 <button
                   onClick={handleSave}
                   disabled={isSaving || isSubmitting}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`px-6 py-2 text-white rounded-lg transition-colors disabled:cursor-not-allowed ${
+                    isSaving 
+                      ? 'bg-rose-500 hover:bg-rose-600' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
                 >
                   {isSaving ? 'Saving...' : 'Save Draft'}
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={isSaving || isSubmitting}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`px-6 py-2 text-white rounded-lg transition-colors disabled:cursor-not-allowed ${
+                    isSubmitting 
+                      ? 'bg-rose-500 hover:bg-rose-600' 
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit & Continue'}
                 </button>

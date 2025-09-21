@@ -1,9 +1,8 @@
 "use client";
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface FormStatus {
   key: string;
@@ -33,9 +32,11 @@ const FORM_SEQUENCE = [
 
 export default function StaffOnboardingPage() {
   const { token } = useParams<{ token: string }>();
+  const router = useRouter();
   const [staff, setStaff] = useState<any>(null);
   const [forms, setForms] = useState<FormStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [navigatingToForm, setNavigatingToForm] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStaffData = async () => {
@@ -125,11 +126,18 @@ export default function StaffOnboardingPage() {
 
   if (loading) {
     return (
-      <LoadingSpinner 
-        title="Loading Staff Data" 
-        message="Please wait while we prepare your onboarding forms..."
-        size="md"
-      />
+      <div className="min-h-screen bg-gray-100 flex justify-center items-center">
+        <div className="text-center">
+          <div className="w-20 h-20 border-4 border-t-rose-500 border-rose-200 rounded-full animate-spin mx-auto mb-6"></div>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">Loading Staff Data</h3>
+          <p className="text-slate-600 font-medium">Please wait while we prepare your onboarding forms...</p>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+            <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -207,16 +215,22 @@ export default function StaffOnboardingPage() {
 
                 <div>
                   {form.enabled ? (
-                    <Link
-                      href={`/staff/onboard/${token}/forms/${form.route}`}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        form.completed
-                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                    <button
+                      onClick={() => {
+                        setNavigatingToForm(form.route);
+                        router.push(`/staff/onboard/${token}/forms/${form.route}`);
+                      }}
+                      disabled={navigatingToForm !== null}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                        navigatingToForm === form.route
+                          ? 'bg-rose-500 text-white hover:bg-rose-600'
+                          : form.completed
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
                       }`}
                     >
-                      {form.completed ? 'View' : 'Start'}
-                    </Link>
+                      {navigatingToForm === form.route ? 'Loading...' : (form.completed ? 'View' : 'Start')}
+                    </button>
                   ) : (
                     <span className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-400">
                       Locked

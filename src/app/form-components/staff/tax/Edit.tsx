@@ -190,14 +190,22 @@ export default function GovtTaxEdit({
           <button
             onClick={handleSaveProgressInternal}
             disabled={isSaving || isSubmitting}
-            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 disabled:bg-gray-400"
+            className={`px-4 py-2 text-white rounded shadow ${
+              isSaving 
+                ? 'bg-rose-500 hover:bg-rose-600' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
             {isSaving ? 'Saving...' : 'Save Progress'}
           </button>
           <button
             onClick={handleSubmitFormInternal}
             disabled={isSaving || isSubmitting}
-            className="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 disabled:bg-gray-400"
+            className={`px-4 py-2 text-white rounded shadow ${
+              isSubmitting 
+                ? 'bg-rose-500 hover:bg-rose-600' 
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
             {isSubmitting ? 'Submitting...' : 'Submit Form'}
           </button>

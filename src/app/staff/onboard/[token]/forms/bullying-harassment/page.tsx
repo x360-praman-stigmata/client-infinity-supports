@@ -12,6 +12,7 @@ export default function BullyingHarassmentFormPage() {
   const [formData, setFormData] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [formReady, setFormReady] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -23,9 +24,15 @@ export default function BullyingHarassmentFormPage() {
         
         setStaff(data.staff);
         setFormData(data.submissions['bullying_harassment_training'] || {});
+        
+        // Wait for the form component to be fully mounted and ready
+        setTimeout(() => {
+          setFormReady(true);
+        }, 800); // Increased delay to ensure form is fully ready
       } catch (error: any) {
         console.error('Error loading data:', error);
         alert(error.message);
+        setFormReady(true); // Show form even on error
       } finally {
         setLoading(false);
       }
@@ -62,13 +69,20 @@ export default function BullyingHarassmentFormPage() {
     }
   };
 
-  if (loading) {
+  if (loading || !formReady) {
     return (
-      <LoadingSpinner 
-        title="Loading Form" 
-        message="Please wait while we load the form..."
-        size="md"
-      />
+      <div className="min-h-screen bg-gray-100 flex justify-center items-center">
+        <div className="text-center">
+          <div className="w-20 h-20 border-4 border-t-rose-500 border-rose-200 rounded-full animate-spin mx-auto mb-6"></div>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">Loading Form</h3>
+          <p className="text-slate-600 font-medium">Please wait while we load your form...</p>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+            <div className="w-2 h-2 bg-rose-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -110,14 +124,22 @@ export default function BullyingHarassmentFormPage() {
             <button
               onClick={() => handleSave(false)}
               disabled={saving}
-              className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50"
+              className={`px-6 py-2 text-white rounded-lg disabled:opacity-50 ${
+                saving 
+                  ? 'bg-rose-500 hover:bg-rose-600' 
+                  : 'bg-gray-500 hover:bg-gray-600'
+              }`}
             >
               {saving ? 'Saving...' : 'Save Draft'}
             </button>
             <button
               onClick={() => handleSave(true)}
               disabled={saving}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+              className={`px-6 py-2 text-white rounded-lg disabled:opacity-50 ${
+                saving 
+                  ? 'bg-rose-500 hover:bg-rose-600' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
             >
               {saving ? 'Submitting...' : 'Submit & Continue'}
             </button>

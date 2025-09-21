@@ -332,14 +332,22 @@ const NDISCodeOfConductEdit = forwardRef<NDISCodeOfConductEditRef, NDISCodeOfCon
             <button
               onClick={() => save(false)}
               disabled={saving}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className={`px-8 py-3 text-white rounded-lg shadow disabled:cursor-not-allowed transition-colors ${
+                saving 
+                  ? 'bg-rose-500 hover:bg-rose-600' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
               {saving ? 'Saving...' : 'Save Draft'}
             </button>
             <button
               onClick={() => save(true)}
               disabled={saving}
-              className="px-8 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className={`px-8 py-3 text-white rounded-lg shadow disabled:cursor-not-allowed transition-colors ${
+                saving 
+                  ? 'bg-rose-500 hover:bg-rose-600' 
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
             >
               {saving ? 'Submitting...' : 'Submit & Continue'}
             </button>
