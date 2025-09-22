@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 
 interface FormStatus {
   key: string;
@@ -37,6 +38,7 @@ export default function StaffOnboardingPage() {
   const [forms, setForms] = useState<FormStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [navigatingToForm, setNavigatingToForm] = useState<string | null>(null);
+  const [copiedFormKey, setCopiedFormKey] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStaffData = async () => {
@@ -213,24 +215,63 @@ export default function StaffOnboardingPage() {
                   </div>
                 </div>
 
-                <div>
+                <div className="flex gap-2 items-center">
                   {form.enabled ? (
-                    <button
-                      onClick={() => {
-                        setNavigatingToForm(form.route);
-                        router.push(`/staff/onboard/${token}/forms/${form.route}`);
-                      }}
-                      disabled={navigatingToForm !== null}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
-                        navigatingToForm === form.route
-                          ? 'bg-rose-500 text-white hover:bg-rose-600'
-                          : form.completed
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-blue-500 text-white hover:bg-blue-600'
-                      }`}
-                    >
-                      {navigatingToForm === form.route ? 'Loading...' : (form.completed ? 'View' : 'Start')}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          setNavigatingToForm(form.route);
+                          router.push(`/staff/onboard/${token}/forms/${form.route}`);
+                        }}
+                        disabled={navigatingToForm !== null}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                          navigatingToForm === form.route
+                            ? 'bg-rose-500 text-white hover:bg-rose-600'
+                            : form.completed
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                              : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                      >
+                        {navigatingToForm === form.route ? 'Loading...' : (form.completed ? 'View' : 'Start')}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const link = `${window.location.origin}/staff/onboard/${token}/forms/${form.route}`;
+                          console.log('Copy button clicked for', form.key, link);
+                          try {
+                            await navigator.clipboard.writeText(link);
+                            setCopiedFormKey(form.key);
+                            console.log('Copied to clipboard, updating state and showing toast');
+                            toast.success(`Link copied for ${form.name}`);
+                          } catch (err) {
+                            console.error('Failed to copy link', err);
+                            toast.error('Failed to copy link');
+                          }
+                          setTimeout(() => {
+                            setCopiedFormKey(null);
+                            console.log('Reset copiedFormKey state');
+                          }, 1500);
+                        }}
+                        className={`px-3 py-2 rounded-lg text-xs font-medium border flex items-center gap-2 transition-all duration-200 focus:outline-none ${
+                          copiedFormKey === form.key
+                            ? 'bg-emerald-500 text-white scale-105 shadow-lg'
+                            : 'bg-gray-100 text-gray-700 hover:bg-blue-100 active:scale-95'
+                        }`}
+                        aria-label={`Copy link for ${form.name}`}
+                      >
+                        {copiedFormKey === form.key ? (
+                          <>
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="#fff" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke="#6366f1" strokeWidth="2"/><rect x="2" y="2" width="13" height="13" rx="2" stroke="#6366f1" strokeWidth="2"/></svg>
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </>
                   ) : (
                     <span className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-400">
                       Locked

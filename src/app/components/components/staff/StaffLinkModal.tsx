@@ -1,6 +1,8 @@
 "use client";
 
-import { FaTimes, FaCopy, FaLink } from 'react-icons/fa';
+import { FaTimes, FaCopy, FaLink, FaCheck } from 'react-icons/fa';
+import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 interface StaffGeneratedLink {
   url: string;
@@ -16,12 +18,18 @@ interface StaffLinkModalProps {
 }
 
 export default function StaffLinkModal({ isOpen, onClose, staffName, staffId, link }: StaffLinkModalProps) {
+  const [copied, setCopied] = useState(false);
   if (!isOpen || !link) return null;
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link.url);
-    } catch {}
+      setCopied(true);
+      toast.success('Link copied to clipboard');
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      toast.error('Failed to copy link');
+    }
   };
 
   return (
@@ -44,8 +52,22 @@ export default function StaffLinkModal({ isOpen, onClose, staffName, staffId, li
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-700 bg-white p-3 rounded border break-all">{link.url}</p>
               </div>
-              <button onClick={copy} className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                <FaCopy className="inline mr-2 h-4 w-4" /> Copy
+              <button
+                onClick={copy}
+                className={`px-3 py-2 rounded-lg flex items-center font-medium transition-all duration-150 focus:outline-none ${
+                  copied ? 'bg-emerald-500 text-white scale-105' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
+                aria-label="Copy onboarding link"
+              >
+                {copied ? (
+                  <>
+                    <FaCheck className="inline mr-2 h-4 w-4" /> Copied!
+                  </>
+                ) : (
+                  <>
+                    <FaCopy className="inline mr-2 h-4 w-4" /> Copy
+                  </>
+                )}
               </button>
             </div>
           </div>
