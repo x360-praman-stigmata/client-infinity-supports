@@ -1,3 +1,15 @@
+// Specialized storage for Documentation Acknowledgement form
+model StaffDocumentationAcknowledgement {
+  id             Int       @id @default(autoincrement())
+  staffId        Int       @unique
+  data           Json
+  staffSignature String? // Staff's signature for this form
+  staffSignedAt  DateTime? // When staff signed this form
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  staff Staff @relation(fields: [staffId], references: [id])
+}
 // Prisma client generator
 generator client {
   provider = "prisma-client-js"
@@ -75,6 +87,7 @@ model Staff {
   bullyingTraining           StaffBullyingTraining?
   ndisCodeOfConduct          StaffNdisCodeOfConduct?
   conflictOfInterest         StaffConflictOfInterest?
+  documentationAcknowledgement StaffDocumentationAcknowledgement?
 }
 
 model StaffFormSubmission {

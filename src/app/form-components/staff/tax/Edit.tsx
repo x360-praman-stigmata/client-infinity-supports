@@ -126,16 +126,27 @@ export default function GovtTaxEdit({
 
   // Submit form function
   const handleSubmitFormInternal = async () => {
-    // Validate required fields
-    const requiredFields = ['tfn', 'surname', 'firstName', 'dob', 'address'];
-    const missingFields = requiredFields.filter(field => !(localFormData as any)[field]);
-    
+    // Validate fields; allow optional ones like branchNo to be empty
+    const optionalFields = new Set<string>(['branchNo']);
+    const missingFields = Object.entries(localFormData)
+      .filter(([key, value]) => {
+        if (optionalFields.has(key)) return false;
+        if (typeof value === 'boolean') return false; // booleans are fine
+        if (value === null || value === undefined) return true;
+        if (typeof value === 'string') return value.trim() === '';
+        return false;
+      })
+      .map(([key]) => key);
+
     if (missingFields.length > 0) {
+      const preview = missingFields.slice(0, 2);
+      const extra = missingFields.length - preview.length;
+      const suffix = extra > 0 ? ` (+${extra} more)` : '';
       showToast({
         type: 'error',
-        title: 'Validation Error',
-        message: `Please fill in required fields: ${missingFields.join(', ')}`,
-        duration: 5000,
+        title: 'Please complete all fields',
+        message: `${preview.join(', ')}${suffix}`,
+        duration: 6000,
       });
       return;
     }

@@ -21,6 +21,7 @@ const FORM_SEQUENCE = [
   { key: 'ndis_workforce_capability', name: 'NDIS Workforce Capability', route: 'ndis-workforce' },
   { key: 'bullying_harassment_training', name: 'Bullying & Harassment Training', route: 'bullying-harassment' },
   { key: 'bullying_training', name: 'Bullying Training', route: 'bullying-training' },
+  { key: 'documentation_acknowledgement', name: 'Documentation Acknowledgement', route: 'acknowledgement-edit' },
   { key: 'ndis_code_of_conduct', name: 'NDIS Code of Conduct', route: 'ndis-code-of-conduct' },
   { key: 'fair_work_information', name: 'Fair Work Information Statement', route: 'fair-work-information' },
   { key: 'casual_employment_information', name: 'Casual Employment Information Statement', route: 'casual-employment-information' },

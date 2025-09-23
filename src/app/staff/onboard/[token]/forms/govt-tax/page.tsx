@@ -2,11 +2,13 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
+import { useToast } from '@/components/ui/Toast';
 import { getStaffFormComponent } from '@/app/forms/staff-registry';
 
 export default function GovtTaxFormPage() {
   const { token } = useParams<{ token: string }>();
   const router = useRouter();
+  const { showToast } = useToast();
   const [staff, setStaff] = useState<any>(null);
   const [formData, setFormData] = useState<any>({});
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ export default function GovtTaxFormPage() {
         setFormData(data.submissions['govt_tax'] || {});
       } catch (error: any) {
         console.error('Error loading data:', error);
-        alert(error.message);
+        showToast({ type: 'error', title: 'Load failed', message: error.message || 'Failed to load' });
       } finally {
         setLoading(false);
       }
@@ -40,6 +42,80 @@ export default function GovtTaxFormPage() {
   const handleSave = async (isSubmit: boolean) => {
     setSaving(true);
     try {
+      // Validate ALL fields before submit (allow draft anytime)
+      if (isSubmit) {
+        const entries = Object.entries(formData || {});
+        const isValidDate = (value: any) => {
+          if (typeof value !== 'string') return false;
+          let d: Date | null = null;
+          if (value.includes('/')) {
+            // dd/mm/yyyy
+            const [dd, mm, yyyy] = value.split('/');
+            const day = parseInt(dd, 10);
+            const month = parseInt(mm, 10) - 1;
+            const year = parseInt(yyyy, 10);
+            const tmp = new Date(year, month, day);
+            if (tmp.getFullYear() === year && tmp.getMonth() === month && tmp.getDate() === day) {
+              d = tmp;
+            }
+          } else {
+            const t = Date.parse(value);
+            if (!Number.isNaN(t)) d = new Date(value);
+          }
+          if (!d) return false;
+          const today = new Date();
+          const iso = (dt: Date) => dt.toISOString().slice(0,10);
+          return iso(d) <= iso(today) && iso(d) >= '1900-01-01';
+        };
+        const missing = entries
+          .filter(([_, v]) => {
+            if (typeof v === 'boolean') return false; // booleans are fine either way
+            if (v === null || v === undefined) return true;
+            if (typeof v === 'string') return v.trim() === '';
+            return false;
+          })
+          .map(([k]) => k);
+        // Validate dates specifically (dob, payerSignatureAt, payeeSignatureAt) if present
+        const dateFields = ['dob', 'payerSignatureAt', 'payeeSignatureAt'];
+        const invalidDates = dateFields.filter((k) => formData?.[k] && !isValidDate(formData[k]));
+        // Age check: 18+
+        let ageInvalid: string[] = [];
+        if (formData?.dob) {
+          const parts = String(formData.dob).includes('/')
+            ? String(formData.dob).split('/')
+            : String(formData.dob).split('-').reverse(); // support yyyy-mm-dd
+          if (parts.length === 3) {
+            const [dd, mm, yyyy] = parts;
+            const birth = new Date(parseInt(yyyy,10), parseInt(mm,10)-1, parseInt(dd,10));
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            if (isNaN(age) || age < 18) ageInvalid.push('dob');
+          }
+        }
+        if (missing.length) {
+          const preview = missing.slice(0, 2);
+          const extra = missing.length - preview.length;
+          const suffix = extra > 0 ? ` (+${extra} more)` : '';
+          showToast({ type: 'error', title: 'Please complete required fields', message: `${preview.join(', ')}${suffix}` });
+          setSaving(false);
+          return;
+        }
+        if (invalidDates.length) {
+          const preview = invalidDates.slice(0, 2);
+          const extra = invalidDates.length - preview.length;
+          const suffix = extra > 0 ? ` (+${extra} more)` : '';
+          showToast({ type: 'error', title: 'Invalid Date', message: `${preview.join(', ')}${suffix}` });
+          setSaving(false);
+          return;
+        }
+        if (ageInvalid.length) {
+          showToast({ type: 'error', title: 'Age requirement', message: 'You must be at least 18 years old – please check Date of Birth.' });
+          setSaving(false);
+          return;
+        }
+      }
       const res = await fetch(`/api/staff/onboard/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -49,13 +125,14 @@ export default function GovtTaxFormPage() {
       if (!res.ok) throw new Error(j.error || 'Failed to save');
       
       if (isSubmit) {
+        showToast({ type: 'success', title: 'Submitted', message: 'Government Tax form submitted.' });
         router.push(`/staff/onboard/${token}`);
       } else {
-        alert('Draft saved successfully!');
+        showToast({ type: 'success', title: 'Draft Saved', message: 'Your draft was saved successfully.' });
       }
     } catch (error: any) {
       console.error('Error saving:', error);
-      alert(error.message);
+      showToast({ type: 'error', title: 'Save failed', message: error.message || 'Failed to save' });
     } finally {
       setSaving(false);
     }

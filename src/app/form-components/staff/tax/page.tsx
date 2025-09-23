@@ -176,6 +176,8 @@ function OverlayCharInput({
           className="char-input border border-gray-400 text-center text-sm"
           style={{ width: effectiveBoxWidth, height: boxHeight }}
           readOnly={readOnly}
+          inputMode={type === 'number' ? 'numeric' : 'text'}
+          pattern={type === 'number' ? "\\d*" : undefined}
         />
       ))}
     </div>
@@ -261,6 +263,7 @@ function OverlayDateCharInput({
     digits.slice(4, 8),
   ];
   const [values, setValues] = useState([day, month, year]);
+  const hiddenDateRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const d = value.replace(/\D/g, "").padEnd(8, "");
@@ -297,6 +300,28 @@ function OverlayDateCharInput({
     }
   };
 
+  const handleCalendarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value; // yyyy-mm-dd
+    if (v) {
+      const [yyyy, mm, dd] = v.split('-');
+      const formatted = `${dd}/${mm}/${yyyy}`;
+      setValues([dd, mm, yyyy]);
+      onChange(formatted);
+    }
+  };
+
+  const openPicker = () => {
+    if (readOnly) return;
+    const el = hiddenDateRef.current as any;
+    if (el) {
+      if (typeof el.showPicker === 'function') {
+        el.showPicker();
+      } else {
+        el.click();
+      }
+    }
+  };
+
   const renderBoxes = (count: number, section: number, prefill: string, startIndex: number) =>
     Array.from({ length: count }).map((_, i) => {
       const globalIndex = startIndex + i;
@@ -318,18 +343,32 @@ function OverlayDateCharInput({
 
   return (
     <>
+      {/* Hidden native date input to allow calendar selection (position it near the boxes so the picker opens there) */}
+      {!readOnly && (
+        <input
+          ref={hiddenDateRef}
+          type="date"
+          style={{ position: 'absolute', top: dayTop, left: dayLeft, width: 1, height: 1, opacity: 0 }}
+          max={new Date().toISOString().slice(0,10)}
+          min="1900-01-01"
+          onChange={handleCalendarSelect}
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      )}
+
       {/* Day */}
-      <div className="absolute flex" style={{ top: dayTop, left: dayLeft }}>
+      <div className="absolute flex" style={{ top: dayTop, left: dayLeft }} onClick={openPicker}>
         {renderBoxes(2, 0, values[0], 0)}
       </div>
 
       {/* Month */}
-      <div className="absolute flex" style={{ top: monthTop, left: monthLeft }}>
+      <div className="absolute flex" style={{ top: monthTop, left: monthLeft }} onClick={openPicker}>
         {renderBoxes(2, 1, values[1], 2)}
       </div>
 
       {/* Year */}
-      <div className="absolute flex" style={{ top: yearTop, left: yearLeft }}>
+      <div className="absolute flex" style={{ top: yearTop, left: yearLeft }} onClick={openPicker}>
         {renderBoxes(4, 2, values[2], 4)}
       </div>
     </>
@@ -766,9 +805,30 @@ export default function TFNOverlayForm({
     const branchError = validateNumber(branchNo, "Branch Number", 3);
     if (branchError) errors.push(branchError);
 
+    // Business phone number validation (10 digits)
+    const phoneError = validateNumber(bussinessPhoneNo, "Business Phone Number", 10);
+    if (phoneError) errors.push(phoneError);
+
     // Date validation
     const dobError = validateDate(dob, "Date of Birth");
     if (dobError) errors.push(dobError);
+    // Age validation (must be 18+)
+    if (!dobError && dob) {
+      const [dd, mm, yyyy] = dob.split('/');
+      const dayNum = parseInt(dd, 10);
+      const monthNum = parseInt(mm, 10) - 1;
+      const yearNum = parseInt(yyyy, 10);
+      const birthDate = new Date(yearNum, monthNum, dayNum);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      if (isNaN(age) || age < 18) {
+        errors.push("You must be at least 18 years old – please select a valid Date of Birth.");
+      }
+    }
 
     // Required checkboxes
     if (!subscribe) {
@@ -1215,7 +1275,7 @@ export default function TFNOverlayForm({
   boxWidth={18}
   boxHeight={25}
   value={bussinessPhoneNo}
-  onChange={setBussinessPhoneNo}
+  onChange={(val) => setBussinessPhoneNo(val.replace(/[^0-9]/g, '').slice(0, 10))}
   readOnly={readOnly}
 />
 

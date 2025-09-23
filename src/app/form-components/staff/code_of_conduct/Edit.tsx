@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import SignatureCanvas from "@/components/ui/SignatureCanvas";
-// import { useToast } from "@/components/ui/Toast";
+import { useToast } from "@/components/ui/Toast";
 import FormPage from "@/components/ui/FormPage";
 
 interface NDISCodeOfConductEditProps {
@@ -17,7 +17,7 @@ export interface NDISCodeOfConductEditRef {
 
 const NDISCodeOfConductEdit = forwardRef<NDISCodeOfConductEditRef, NDISCodeOfConductEditProps>(
   ({ token, staff, onSubmitted }, ref) => {
-    // const { showToast } = useToast();
+    const { showToast } = useToast();
     const [signature, setSignature] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [position, setPosition] = useState('');
@@ -57,22 +57,34 @@ const NDISCodeOfConductEdit = forwardRef<NDISCodeOfConductEditRef, NDISCodeOfCon
       loadData();
     }, [token]);
 
+    const isValidDateString = (value: string): boolean => {
+      if (!value) return false;
+      const t = Date.parse(value);
+      if (Number.isNaN(t)) return false;
+      const d = new Date(value);
+      const today = new Date();
+      const iso = (dt: Date) => dt.toISOString().slice(0,10);
+      return iso(d) <= iso(today) && iso(d) >= '1900-01-01';
+    };
+
     const validateForm = () => {
-      if (!signature) {
-        alert('Please provide your signature to acknowledge the NDIS Code of Conduct.');
+      const missing: string[] = [];
+      if (!signature) missing.push('Signature');
+      if (!date) missing.push('Date');
+      if (!position) missing.push('Position');
+      if (missing.length) {
+        showToast({
+          type: 'error',
+          title: 'Please fill the required fields',
+          message: `Missing: ${missing.join(', ')}`,
+          duration: 6000
+        });
         return false;
       }
-      
-      if (!date) {
-        alert('Please provide the date of acknowledgment.');
+      if (!isValidDateString(date)) {
+        showToast({ type: 'error', title: 'Invalid Date', message: 'Date must be a valid past or today date.' });
         return false;
       }
-      
-      if (!position) {
-        alert('Please provide your position/title.');
-        return false;
-      }
-      
       return true;
     };
 
@@ -105,12 +117,12 @@ const NDISCodeOfConductEdit = forwardRef<NDISCodeOfConductEditRef, NDISCodeOfCon
         
         if (!res.ok) {
           const errorMessage = result.message || result.error || 'Failed to save form';
-          alert('Save Error: ' + errorMessage);
+          showToast({ type: 'error', title: 'Save Error', message: errorMessage });
           return;
         }
 
-        const action = isSubmit ? 'submitted' : 'saved';
-        alert(`NDIS Code of Conduct form has been ${action} successfully.`);
+        const action = isSubmit ? 'Submitted' : 'Draft Saved';
+        showToast({ type: 'success', title: action, message: 'NDIS Code of Conduct form updated successfully.' });
 
         if (isSubmit && onSubmitted) {
           setTimeout(() => {
@@ -119,7 +131,7 @@ const NDISCodeOfConductEdit = forwardRef<NDISCodeOfConductEditRef, NDISCodeOfCon
         }
       } catch (error) {
         console.error('Error saving form:', error);
-        alert('Connection Error: Failed to connect to server.');
+        showToast({ type: 'error', title: 'Connection Error', message: 'Failed to connect to server.' });
       } finally {
         setSaving(false);
       }
@@ -307,6 +319,8 @@ const NDISCodeOfConductEdit = forwardRef<NDISCodeOfConductEditRef, NDISCodeOfCon
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
                       className="w-full border-b-2 border-gray-400 bg-transparent h-12 px-0 text-sm focus:outline-none focus:border-blue-500"
+                      max={new Date().toISOString().slice(0,10)}
+                      min="1900-01-01"
                       required
                     />
                   </div>

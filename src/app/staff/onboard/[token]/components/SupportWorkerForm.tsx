@@ -3,6 +3,7 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import FormPage from '@/components/ui/FormPage';
 import SignatureCanvas from '@/components/ui/SignatureCanvas';
+import { useToast } from '@/components/ui/Toast';
 
 export interface SupportWorkerFormRef {
   save: (final: boolean) => Promise<boolean>;
@@ -21,6 +22,7 @@ const SupportWorkerForm = forwardRef<SupportWorkerFormRef, SupportWorkerFormProp
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState<any>({});
   const [staffInfo, setStaffInfo] = useState<any>({});
+  const { showToast } = useToast();
 
   useEffect(() => {
     // Load saved data if any
@@ -38,6 +40,10 @@ const SupportWorkerForm = forwardRef<SupportWorkerFormRef, SupportWorkerFormProp
             // Handle signature data from new fields
             signature: saved.signature || '',
             signatureDate: saved.signatureDate || '',
+						// Editable position fields defaults
+						positionTitle: saved.positionTitle || 'Support Worker',
+						businessUnit: saved.businessUnit || '',
+						reportsTo: saved.reportsTo || '',
             // Set name from staff info if not already set
             name: saved.name || `${s.firstName || ''} ${s.surname || ''}`.trim()
           }));
@@ -58,8 +64,15 @@ const SupportWorkerForm = forwardRef<SupportWorkerFormRef, SupportWorkerFormProp
   }, [data, onValidityChange]);
 
   const validate = (): boolean => {
-    // Check if name and signature are filled
-    return !!(data.name && data.signature && data.signatureDate);
+    // Required fields: name, signature, date, positionTitle, businessUnit, reportsTo
+    return !!(
+      data.name &&
+      data.signature &&
+      data.signatureDate &&
+      data.positionTitle &&
+      data.businessUnit &&
+      data.reportsTo
+    );
   };
 
   const validateDetailed = () => {
@@ -69,6 +82,9 @@ const SupportWorkerForm = forwardRef<SupportWorkerFormRef, SupportWorkerFormProp
     if (!data.name) missing.push('Name');
     if (!data.signature) missing.push('Signature');
     if (!data.signatureDate) missing.push('Date');
+    if (!data.positionTitle) missing.push('Position Title');
+    if (!data.businessUnit) missing.push('Business Unit');
+    if (!data.reportsTo) missing.push('Reports To');
     
     return {
       isValid: missing.length === 0 && invalid.length === 0,
@@ -80,6 +96,18 @@ const SupportWorkerForm = forwardRef<SupportWorkerFormRef, SupportWorkerFormProp
   const save = async (final: boolean): Promise<boolean> => {
     setLoading(true);
     try {
+      if (final) {
+        const details = validateDetailed();
+        if (!details?.isValid) {
+          showToast({
+            type: 'error',
+            title: 'Please fill the required fields',
+            message: `Missing: ${(details?.missing || []).join(', ')}`,
+            duration: 6000
+          });
+          return false;
+        }
+      }
       const response = await fetch(`/api/staff/onboard/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,11 +122,14 @@ const SupportWorkerForm = forwardRef<SupportWorkerFormRef, SupportWorkerFormProp
         if (final) {
           setSaved(data);
         }
+        showToast({ type: 'success', title: final ? 'Submitted' : 'Draft Saved', message: 'Support Worker form updated successfully.' });
         return true;
       }
+      showToast({ type: 'error', title: 'Save failed', message: 'Unable to save the Support Worker form.' });
       return false;
     } catch (e) {
       console.error('Save failed:', e);
+      showToast({ type: 'error', title: 'Save failed', message: 'Network or server error.' });
       return false;
     } finally {
       setLoading(false);
@@ -135,11 +166,35 @@ const SupportWorkerForm = forwardRef<SupportWorkerFormRef, SupportWorkerFormProp
                     <h3 className="text-xl font-semibold">Position Description</h3>
                   </div>
                   <div className="border border-gray-300 rounded-b-lg p-4 w-full mt-3">
-                    <div className="space-y-3">
-                      <Field label="Position Title" value="Support Worker" />
-                      <Field label="Business Unit" value={data?.businessUnit} />
-                      <Field label="Reports To" value={data?.reportsTo} />
-                    </div>
+						<div className="space-y-3">
+							<div>
+								<div className="text-xs font-medium text-gray-700 mb-1">Position Title:</div>
+								<input
+									type="text"
+									value={data.positionTitle || 'Support Worker'}
+									onChange={(e) => handleChange('positionTitle', e.target.value)}
+									className="w-full border border-gray-400 h-8 rounded-sm px-2 text-gray-900 bg-white"
+								/>
+							</div>
+							<div>
+								<div className="text-xs font-medium text-gray-700 mb-1">Business Unit:</div>
+								<input
+									type="text"
+									value={data.businessUnit || ''}
+									onChange={(e) => handleChange('businessUnit', e.target.value)}
+									className="w-full border border-gray-400 h-8 rounded-sm px-2 text-gray-900 bg-white"
+								/>
+							</div>
+							<div>
+								<div className="text-xs font-medium text-gray-700 mb-1">Reports To:</div>
+								<input
+									type="text"
+									value={data.reportsTo || ''}
+									onChange={(e) => handleChange('reportsTo', e.target.value)}
+									className="w-full border border-gray-400 h-8 rounded-sm px-2 text-gray-900 bg-white"
+								/>
+							</div>
+						</div>
                   </div>
                 </div>
 
