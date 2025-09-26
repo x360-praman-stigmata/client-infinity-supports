@@ -114,10 +114,8 @@ export default function ConflictFormEdit({
   const handleDataChange = useCallback((newData: Partial<ConflictFormData>) => {
     setFormData(prev => ({ ...prev, ...newData }));
     // Clear validation errors when user makes changes
-    if (Object.keys(validationErrors).length > 0) {
-      setValidationErrors({});
-    }
-  }, [validationErrors]);
+    setValidationErrors(prev => Object.keys(prev).length > 0 ? {} : prev);
+  }, []);
 
   // Use useEffect to call onDataChange when formData changes (but not on initial render)
   useEffect(() => {
@@ -227,7 +225,7 @@ export default function ConflictFormEdit({
     return (
       <LoadingSpinner 
         title="Saving Draft" 
-        subtitle="Please wait while we save your form..."
+        message="Please wait while we save your form..."
         size="md"
       />
     );
@@ -237,7 +235,7 @@ export default function ConflictFormEdit({
     return (
       <LoadingSpinner 
         title="Submitting Form" 
-        subtitle="Please wait while we process your submission..."
+        message="Please wait while we process your submission..."
         size="md"
       />
     );
