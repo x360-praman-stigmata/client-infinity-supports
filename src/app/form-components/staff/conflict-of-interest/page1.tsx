@@ -6,9 +6,10 @@ interface ConflictFormPage1Props {
   readOnly?: boolean;
   onDataChange?: (data: any) => void;
   validationErrors?: Record<string, string>;
+  staffData?: { firstName: string; surname: string; };
 }
 
-export default function ConflictFormPage1({ formData, readOnly = false, onDataChange, validationErrors = {} }: ConflictFormPage1Props) {
+export default function ConflictFormPage1({ formData, readOnly = false, onDataChange, validationErrors = {}, staffData }: ConflictFormPage1Props) {
   const handleInputChange = (field: string, value: any) => {
     if (onDataChange) {
       onDataChange({ [field]: value });
@@ -16,35 +17,35 @@ export default function ConflictFormPage1({ formData, readOnly = false, onDataCh
   };
 
   return (
-    <div className="bg-white text-black px-8 py-8 max-w-[210mm] mx-auto font-['Open_Sans'] shadow-lg min-h-[297mm]">
+    <div className="bg-white text-black px-4 sm:px-8 py-6 sm:py-8 max-w-full sm:max-w-[210mm] mx-auto font-['Open_Sans'] shadow-lg min-h-[297mm]">
       <div className="flex justify-center mb-4">
         <img
           src="/infinity_logo.png"
           alt="Infinity Supports WA logo with stylized infinity symbol in muted red above text"
-          className="w-[350px] h-[160px] object-contain"
+          className="w-[250px] sm:w-[350px] h-[120px] sm:h-[160px] object-contain"
           width={350}
           height={160}
         />
       </div>
 
-      <p className="text-center text-[20px] font-bold mb-8">
+      <p className="text-center text-[18px] sm:text-[20px] font-bold mb-6 sm:mb-8">
         Conflict of Interest Disclosure Form
       </p>
 
       <p className="font-bold mb-2">Employee Information:</p>
       <div className="mb-6 space-y-3">
-        <div className="flex items-center">
-          <span className="font-normal w-32">Name: <span className="text-red-500">*</span></span>
-          {readOnly ? (
-            <span className="font-normal border-b border-gray-400 px-2 py-1 min-w-[300px]">
-              {formData.name || "____________________________"}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+          <span className="font-normal w-full sm:w-32">Name: <span className="text-red-500">*</span></span>
+          {readOnly || staffData ? (
+            <span className="font-normal border-b border-gray-400 px-2 py-1 min-w-0 sm:min-w-[300px] bg-gray-50 break-words">
+              {formData.name || (staffData ? `${staffData.firstName} ${staffData.surname}` : "____________________________")}
             </span>
           ) : (
             <input
               type="text"
               value={formData.name || ""}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              className={`font-normal border-b px-2 py-1 min-w-[300px] focus:outline-none ${
+              className={`font-normal border-b px-2 py-1 min-w-0 sm:min-w-[300px] focus:outline-none ${
                 validationErrors.name 
                   ? 'border-red-500 bg-red-50' 
                   : 'border-gray-400 focus:border-blue-500'
@@ -54,10 +55,10 @@ export default function ConflictFormPage1({ formData, readOnly = false, onDataCh
             />
           )}
         </div>
-        <div className="flex items-center">
-          <span className="font-normal w-32">Position: <span className="text-red-500">*</span></span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+          <span className="font-normal w-full sm:w-32">Position: <span className="text-red-500">*</span></span>
           {readOnly ? (
-            <span className="font-normal border-b border-gray-400 px-2 py-1 min-w-[300px]">
+            <span className="font-normal border-b border-gray-400 px-2 py-1 min-w-0 sm:min-w-[300px] break-words">
               {formData.position || "____________________________"}
             </span>
           ) : (
@@ -65,7 +66,7 @@ export default function ConflictFormPage1({ formData, readOnly = false, onDataCh
               type="text"
               value={formData.position || ""}
               onChange={(e) => handleInputChange('position', e.target.value)}
-              className={`font-normal border-b px-2 py-1 min-w-[300px] focus:outline-none ${
+              className={`font-normal border-b px-2 py-1 min-w-0 sm:min-w-[300px] focus:outline-none ${
                 validationErrors.position 
                   ? 'border-red-500 bg-red-50' 
                   : 'border-gray-400 focus:border-blue-500'
@@ -75,10 +76,10 @@ export default function ConflictFormPage1({ formData, readOnly = false, onDataCh
             />
           )}
         </div>
-        <div className="flex items-center">
-          <span className="font-normal w-32">Department: <span className="text-red-500">*</span></span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+          <span className="font-normal w-full sm:w-32">Department: <span className="text-red-500">*</span></span>
           {readOnly ? (
-            <span className="font-normal border-b border-gray-400 px-2 py-1 min-w-[300px]">
+            <span className="font-normal border-b border-gray-400 px-2 py-1 min-w-0 sm:min-w-[300px] break-words">
               {formData.department || "____________________________"}
             </span>
           ) : (
@@ -86,7 +87,7 @@ export default function ConflictFormPage1({ formData, readOnly = false, onDataCh
               type="text"
               value={formData.department || ""}
               onChange={(e) => handleInputChange('department', e.target.value)}
-              className={`font-normal border-b px-2 py-1 min-w-[300px] focus:outline-none ${
+              className={`font-normal border-b px-2 py-1 min-w-0 sm:min-w-[300px] focus:outline-none ${
                 validationErrors.department 
                   ? 'border-red-500 bg-red-50' 
                   : 'border-gray-400 focus:border-blue-500'
@@ -96,10 +97,10 @@ export default function ConflictFormPage1({ formData, readOnly = false, onDataCh
             />
           )}
         </div>
-        <div className="flex items-center">
-          <span className="font-normal w-32">Date: <span className="text-red-500">*</span></span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+          <span className="font-normal w-full sm:w-32">Date: <span className="text-red-500">*</span></span>
           {readOnly ? (
-            <span className="font-normal border-b border-gray-400 px-2 py-1 min-w-[300px]">
+            <span className="font-normal border-b border-gray-400 px-2 py-1 min-w-0 sm:min-w-[300px] break-words">
               {formData.date || "____________________________"}
             </span>
           ) : (
@@ -107,7 +108,7 @@ export default function ConflictFormPage1({ formData, readOnly = false, onDataCh
               type="date"
               value={formData.date || ""}
               onChange={(e) => handleInputChange('date', e.target.value)}
-              className={`font-normal border-b px-2 py-1 min-w-[300px] focus:outline-none ${
+              className={`font-normal border-b px-2 py-1 min-w-0 sm:min-w-[300px] focus:outline-none ${
                 validationErrors.date 
                   ? 'border-red-500 bg-red-50' 
                   : 'border-gray-400 focus:border-blue-500'
@@ -133,14 +134,14 @@ export default function ConflictFormPage1({ formData, readOnly = false, onDataCh
         <div className="flex items-start">
           {readOnly ? (
             <input
-              className="mt-1 mr-3 w-4 h-4"
+              className="mt-1 mr-3 w-4 h-4 flex-shrink-0"
               type="checkbox"
               checked={!!formData.noConflict}
               readOnly
             />
           ) : (
             <input
-              className="mt-1 mr-3 w-4 h-4 cursor-pointer"
+              className="mt-1 mr-3 w-4 h-4 cursor-pointer flex-shrink-0"
               type="checkbox"
               checked={!!formData.noConflict}
               onChange={(e) => {
@@ -159,14 +160,14 @@ export default function ConflictFormPage1({ formData, readOnly = false, onDataCh
         <div className="flex items-start">
           {readOnly ? (
             <input
-              className="mt-1 mr-3 w-4 h-4"
+              className="mt-1 mr-3 w-4 h-4 flex-shrink-0"
               type="checkbox"
               checked={!!formData.yesConflict}
               readOnly
             />
           ) : (
             <input
-              className="mt-1 mr-3 w-4 h-4 cursor-pointer"
+              className="mt-1 mr-3 w-4 h-4 cursor-pointer flex-shrink-0"
               type="checkbox"
               checked={!!formData.yesConflict}
               onChange={(e) => {

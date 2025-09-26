@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
+import { toast } from 'react-hot-toast';
 import ConflictFormEdit from '@/app/form-components/staff/conflict-of-interest/Edit';
 
 export default function ConflictOfInterestFormPage() {
@@ -21,10 +22,12 @@ export default function ConflictOfInterestFormPage() {
         if (!res.ok) throw new Error(data.error);
         
         setStaff(data.staff);
-        setFormData(data.submissions['conflict_of_interest'] || {});
+        const conflictData = data.submissions['conflict_of_interest'] || {};
+        console.log('Loaded conflict form data:', conflictData); // Debug log
+        setFormData(conflictData);
       } catch (error: any) {
         console.error('Error loading data:', error);
-        alert(error.message);
+        toast.error(error.message || 'Failed to load form data');
       } finally {
         setLoading(false);
       }
@@ -46,7 +49,7 @@ export default function ConflictOfInterestFormPage() {
         body: JSON.stringify({
           formKey: 'conflict_of_interest',
           data: data,
-          isSubmit: false
+          submit: false
         })
       });
 
@@ -55,10 +58,10 @@ export default function ConflictOfInterestFormPage() {
         throw new Error(error.error);
       }
 
-      alert('Draft saved successfully!');
+      toast.success('Draft saved successfully!');
     } catch (error: any) {
       console.error('Error saving:', error);
-      alert(error.message);
+      toast.error(error.message || 'Failed to save draft');
     } finally {
       setSaving(false);
     }
@@ -73,7 +76,7 @@ export default function ConflictOfInterestFormPage() {
         body: JSON.stringify({
           formKey: 'conflict_of_interest',
           data: data,
-          isSubmit: true
+          submit: true
         })
       });
 
@@ -82,11 +85,11 @@ export default function ConflictOfInterestFormPage() {
         throw new Error(error.error);
       }
 
-      alert('Form submitted successfully!');
+      toast.success('Form submitted successfully!');
       router.push(`/staff/onboard/${token}`);
     } catch (error: any) {
       console.error('Error submitting:', error);
-      alert(error.message);
+      toast.error(error.message || 'Failed to submit form');
     } finally {
       setSaving(false);
     }
@@ -113,15 +116,15 @@ export default function ConflictOfInterestFormPage() {
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div className="bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-lg shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Conflict of Interest Disclosure</h1>
-              <p className="text-gray-600">{staff?.firstName} {staff?.surname}</p>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold truncate">Conflict of Interest Disclosure</h1>
+              <p className="text-rose-100 text-sm sm:text-base mt-1 truncate">{staff?.firstName} {staff?.surname}</p>
             </div>
             <button
               onClick={() => router.push(`/staff/onboard/${token}`)}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              className="ml-3 px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-colors flex-shrink-0 text-sm sm:text-base"
             >
               ← Back to Forms
             </button>
@@ -131,6 +134,7 @@ export default function ConflictOfInterestFormPage() {
         {/* Form Component */}
         <ConflictFormEdit
           initialData={formData}
+          staffData={staff}
           onDataChange={handleFormDataChange}
           readOnly={false}
           showButtons={true}

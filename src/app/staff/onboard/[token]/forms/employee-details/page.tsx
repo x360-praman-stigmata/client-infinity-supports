@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'react-hot-toast';
 import EmployeeDetailsStep, { EmployeeDetailsStepRef } from '../../components/EmployeeDetailsStep';
 import { getStaffFormComponent } from '@/app/forms/staff-registry';
 
@@ -32,7 +33,7 @@ export default function EmployeeDetailsFormPage() {
         }, 800); // Increased delay to ensure form is fully ready
       } catch (error: any) {
         console.error('Error loading data:', error);
-        alert(error.message);
+        toast.error(error.message || 'Failed to load form data');
         setFormReady(true); // Show form even on error
       } finally {
         setLoading(false);
@@ -52,11 +53,11 @@ export default function EmployeeDetailsFormPage() {
       if (success && isSubmit) {
         router.push(`/staff/onboard/${token}`);
       } else if (success) {
-        alert('Draft saved successfully!');
+        toast.success('Draft saved successfully!');
       }
     } catch (error: any) {
       console.error('Error saving:', error);
-      alert(error.message);
+      toast.error(error.message || 'Failed to save form');
     } finally {
       setSaving(false);
     }

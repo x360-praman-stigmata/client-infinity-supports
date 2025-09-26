@@ -31,6 +31,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
           bullyingHarassmentTraining: true,
           bullyingTraining: true,
           ndisCodeOfConduct: true,
+          conflictOfInterest: true,
         }
       });
     } catch (error: any) {
@@ -77,6 +78,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
             bullyingHarassmentTraining: true,
             bullyingTraining: true,
             ndisCodeOfConduct: true,
+            conflictOfInterest: true,
           }
         });
       } else {
@@ -186,7 +188,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
       };
     }
 
-    return NextResponse.json({
+    // Handle Conflict of Interest form with signature
+    if (staff.conflictOfInterest) {
+      dataByForm['conflict_of_interest'] = {
+        ...(staff.conflictOfInterest.data as any || {}),
+        employeeSignature: staff.conflictOfInterest.staffSignature || '',
+        employeeDate: staff.conflictOfInterest.staffSignedAt?.toISOString().split('T')[0] || '',
+        staffSignature: staff.conflictOfInterest.staffSignature || '',
+        staffSignedAt: staff.conflictOfInterest.staffSignedAt?.toISOString() || ''
+      };
+    }    return NextResponse.json({
       success: true,
       message: 'Staff data loaded successfully',
       staff: {
@@ -589,6 +600,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
         });
       } catch (error: any) {
         if (error.code === 'P2021' && error.message.includes('StaffVehicleSafetyInspection')) {
+          // Table doesn't exist, use generic form submission
+          saved = await prisma.staffFormSubmission.upsert({
+            where: { staffId_formKey: { staffId: staff.id, formKey } },
+            update: { data, isSubmitted: !!submit, submittedAt: submit ? new Date() : null },
+            create: { staffId: staff.id, formKey, data, isSubmitted: !!submit, submittedAt: submit ? new Date() : null },
+          });
+        } else {
+          throw error;
+        }
+      }
+    } else if (formKey === 'conflict_of_interest') {
+      // Extract employee signature data if present
+      const { employeeSignature, employeeDate, ...allFormData } = data;
+      const signatureData = employeeSignature ? {
+        staffSignature: employeeSignature,
+        staffSignedAt: employeeDate ? new Date(employeeDate) : new Date()
+      } : {};
+      
+      try {
+        saved = await prisma.staffConflictOfInterest.upsert({
+          where: { staffId: staff.id },
+          update: { 
+            data: allFormData, // Store all form data including reviewer signature
+            ...signatureData
+          },
+          create: { 
+            staffId: staff.id, 
+            data: allFormData, // Store all form data including reviewer signature
+            ...signatureData
+          },
+        });
+      } catch (error: any) {
+        if (error.code === 'P2021' && error.message.includes('StaffConflictOfInterest')) {
           // Table doesn't exist, use generic form submission
           saved = await prisma.staffFormSubmission.upsert({
             where: { staffId_formKey: { staffId: staff.id, formKey } },

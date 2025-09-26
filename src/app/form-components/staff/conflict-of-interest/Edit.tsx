@@ -5,6 +5,7 @@ import ConflictFormPage1 from './page1';
 import ConflictFormPage2 from './page2';
 import ConflictFormPage3 from './page3';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import PDFDownloadButton from '@/components/ui/PDFDownloadButton';
 
 interface ConflictFormData {
   // Employee Information
@@ -50,6 +51,7 @@ interface ValidationErrors {
 
 interface ConflictFormEditProps {
   initialData?: Partial<ConflictFormData>;
+  staffData?: { firstName: string; surname: string; };
   onDataChange?: (data: ConflictFormData) => void;
   readOnly?: boolean;
   showButtons?: boolean;
@@ -59,6 +61,7 @@ interface ConflictFormEditProps {
 
 export default function ConflictFormEdit({
   initialData = {},
+  staffData,
   onDataChange,
   readOnly = false,
   showButtons = true,
@@ -66,11 +69,11 @@ export default function ConflictFormEdit({
   onSubmit
 }: ConflictFormEditProps) {
   const [formData, setFormData] = useState<ConflictFormData>({
-    // Employee Information
-    name: initialData.name || '',
+    // Employee Information - pre-populate name from staff data
+    name: initialData.name || (staffData ? `${staffData.firstName} ${staffData.surname}` : ''),
     position: initialData.position || '',
     department: initialData.department || '',
-    date: initialData.date || '',
+    date: initialData.date || new Date().toISOString().split('T')[0],
     
     // Section 1: Conflict of Interest
     noConflict: initialData.noConflict || false,
@@ -241,44 +244,16 @@ export default function ConflictFormEdit({
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
+    <div className="min-h-screen bg-gray-100 py-4 px-4 sm:py-8">
       <div className="max-w-4xl mx-auto">
-        {/* Action Buttons */}
-        {showButtons && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <div className="flex justify-between items-center">
-              <button
-                onClick={() => window.history.back()}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                ← Back to Forms
-              </button>
-              
-              <div className="flex gap-4">
-                <button
-                  onClick={handleSave}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Save Draft
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Submit & Continue
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Form Pages */}
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           <ConflictFormPage1 
             formData={formData} 
             readOnly={readOnly} 
             onDataChange={handleDataChange}
             validationErrors={validationErrors}
+            staffData={staffData}
           />
           <ConflictFormPage2 
             formData={formData} 
@@ -302,44 +277,42 @@ export default function ConflictFormEdit({
               {Object.entries(validationErrors).map(([field, error]) => (
                 <li key={field} className="flex items-start">
                   <span className="mr-2">•</span>
-                  <span>{error}</span>
+                  <span className="text-sm">{error}</span>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
-        {/* Submit Buttons */}
+        {/* Bottom Action Buttons */}
         {showButtons && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-            <div className="flex justify-between items-center">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mt-6">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               <button
                 onClick={() => window.history.back()}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="w-full sm:w-auto px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 ← Back to Forms
               </button>
               
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <PDFDownloadButton
+                  formData={formData}
+                  formTitle="Conflict of Interest Disclosure"
+                  staffName={staffData ? `${staffData.firstName} ${staffData.surname}` : undefined}
+                  className="w-full sm:w-auto"
+                />
                 <button
                   onClick={handleSave}
                   disabled={isSaving || isSubmitting}
-                  className={`px-6 py-2 text-white rounded-lg transition-colors disabled:cursor-not-allowed ${
-                    isSaving 
-                      ? 'bg-rose-500 hover:bg-rose-600' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
+                  className="w-full sm:w-auto px-6 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50"
                 >
                   {isSaving ? 'Saving...' : 'Save Draft'}
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={isSaving || isSubmitting}
-                  className={`px-6 py-2 text-white rounded-lg transition-colors disabled:cursor-not-allowed ${
-                    isSubmitting 
-                      ? 'bg-rose-500 hover:bg-rose-600' 
-                      : 'bg-green-600 hover:bg-green-700'
-                  }`}
+                  className="w-full sm:w-auto px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit & Continue'}
                 </button>
