@@ -1,6 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+// Input refs for focusing on validation error (Page 1)
+const fullNameRef = React.createRef<HTMLInputElement>();
+const employeeNumberRefs = { current: Array(16).fill(null) as (HTMLInputElement | null)[] };
+const tfnRefs = { current: Array(9).fill(null) as (HTMLInputElement | null)[] };
 import Image from "next/image";
 import OverlaySignatureBox from "../tax/OverlaySignaturePad";
 import { toast } from "react-hot-toast";
@@ -8,7 +12,7 @@ import { toast } from "react-hot-toast";
 // Validation Utilities
 const validateString = (value: string, fieldName: string): string | null => {
   if (!value || value.trim().length === 0) {
-    return `${fieldName} is required - please fill this field`;
+    return `${fieldName} is required`;
   }
   if (value.trim().length < 2) {
     return `${fieldName} must be at least 2 characters`;
@@ -37,51 +41,43 @@ const validateDate = (date: { day: string; month: string; year: string }, fieldN
   if (!date.day || !date.month || !date.year) {
     return `${fieldName} is required`;
   }
-  
   // Check if all date boxes are filled (no empty spaces)
   if (date.day.length !== 2 || date.month.length !== 2 || date.year.length !== 4) {
-    return `${fieldName} must be completely filled - all date boxes must be filled`;
+    return `${fieldName} is required`;
   }
-  
   const day = parseInt(date.day);
   const month = parseInt(date.month);
   const year = parseInt(date.year);
-  
   if (isNaN(day) || isNaN(month) || isNaN(year)) {
     return `${fieldName} must contain only numbers`;
   }
-  
   if (day < 1 || day > 31) {
     return `${fieldName} day must be between 01 and 31`;
   }
-  
   if (month < 1 || month > 12) {
     return `${fieldName} month must be between 01 and 12`;
   }
-  
   if (year < 1900 || year > 2100) {
     return `${fieldName} year must be between 1900 and 2100`;
   }
-  
   // Check if date is valid
   const dateObj = new Date(year, month - 1, day);
   if (dateObj.getDate() !== day || dateObj.getMonth() !== month - 1 || dateObj.getFullYear() !== year) {
     return `${fieldName} is not a valid date`;
   }
-  
   return null;
 };
 
 const validateCheckbox = (checked: boolean, fieldName: string): string | null => {
   if (!checked) {
-    return `${fieldName} must be checked - please tick the checkbox`;
+    return `${fieldName} is required`;
   }
   return null;
 };
 
 const validateSignature = (signature: string | null, fieldName: string): string | null => {
   if (!signature || signature.trim().length === 0) {
-    return `${fieldName} is required - please sign this field`;
+    return `${fieldName} is required`;
   }
   return null;
 };
@@ -612,10 +608,30 @@ export default function SuperChoiceForm({
   showButtons = true,
   onValidationChange
 }: SuperChoiceFormProps = {}) {
-  // Refs for all form fields to enable up/down navigation
+  // Refs for all form fields to enable up/down navigation (all required fields in all sections)
   const fullNameRef = React.useRef<HTMLInputElement>(null);
   const employeeNumberRefs = React.useRef<(HTMLInputElement | null)[]>([]);
   const tfnRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  // Section B
+  const superFundNameRef = React.useRef<HTMLInputElement>(null);
+  const superFundABNRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  const superFundUSIRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  const memberAccountNumberRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  const accountNameRef = React.useRef<HTMLInputElement>(null);
+  // Section C
+  const businessNameRef = React.useRef<HTMLInputElement>(null);
+  const businessABNRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  const defaultSuperFundNameRef = React.useRef<HTMLInputElement>(null);
+  const defaultSuperFundABNRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  const defaultSuperFundUSIRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  // Section D
+  const smsfNameRef = React.useRef<HTMLInputElement>(null);
+  const smsfABNRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  const smsfESARef = React.useRef<HTMLInputElement>(null);
+  const smsfAccountNameRef = React.useRef<HTMLInputElement>(null);
+  const bankAccountNameRef = React.useRef<HTMLInputElement>(null);
+  const bsbCodeRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  const accountNumberRefs = React.useRef<(HTMLInputElement | null)[]>([]);
   // Page 1 - Section A: Your details
   const [fullName, setFullName] = useState(initialData.fullName || "");
   const [employeeNumber, setEmployeeNumber] = useState(initialData.employeeNumber || "");
@@ -817,15 +833,63 @@ export default function SuperChoiceForm({
   ]);
 
   // Function to show validation errors as toast messages
-  const showValidationErrors = (errors: string[]) => {
-    errors.forEach((error, index) => {
-      setTimeout(() => {
-        toast.error(error, {
-          duration: 4000,
-          position: 'top-center',
-        });
-      }, index * 100); // Stagger the toasts
-    });
+  // Improved: Show a single toast if more than 2 errors, and focus the first missing field
+  const showValidationErrors = (errors: string[], missingFields?: string[]) => {
+    // Show only first 2 missing fields, add 'etc.' if more
+    let displayFields = missingFields || [];
+    let displayMsg = '';
+    if (displayFields.length > 2) {
+      displayMsg = `Please fill in the following fields: ${displayFields[0]}, ${displayFields[1]}, etc.`;
+    } else if (displayFields.length > 0) {
+      displayMsg = `Please fill in the following fields: ${displayFields.join(', ')}`;
+    }
+    if (displayMsg) {
+      toast.error(displayMsg, { duration: 5000, position: 'top-center' });
+    }
+    // Focus the first missing field if a ref exists
+    if (displayFields.length > 0) {
+      const firstField = displayFields[0];
+      const fieldMap = {
+        'Full Name': fullNameRef,
+        'Employee Number': employeeNumberRefs,
+        'Tax File Number (TFN)': tfnRefs,
+        'Super Fund Name': superFundNameRef,
+        'Super Fund ABN': superFundABNRefs,
+        'Super Fund USI': superFundUSIRefs,
+        'Member Account Number': memberAccountNumberRefs,
+        'Account Name': accountNameRef,
+        'Business Name': businessNameRef,
+        'Business ABN': businessABNRefs,
+        'Default Super Fund Name': defaultSuperFundNameRef,
+        'Default Super Fund ABN': defaultSuperFundABNRefs,
+        'Default Super Fund USI': defaultSuperFundUSIRefs,
+        'SMSF Name': smsfNameRef,
+        'SMSF ABN': smsfABNRefs,
+        'SMSF Electronic Service Address': smsfESARef,
+        'SMSF Account Name': smsfAccountNameRef,
+        'Bank Account Name': bankAccountNameRef,
+        'BSB Code': bsbCodeRefs,
+        'Account Number': accountNumberRefs,
+      };
+      if (fieldMap[firstField]) {
+        if (Array.isArray(fieldMap[firstField]?.current)) {
+          fieldMap[firstField].current[0]?.focus();
+        } else {
+          fieldMap[firstField].current?.focus();
+        }
+      }
+    }
+    // If only single errors (not missingFields), fallback to showing all errors as toasts
+    if ((!missingFields || missingFields.length === 0) && errors.length > 0) {
+      errors.forEach((error, index) => {
+        setTimeout(() => {
+          toast.error(error, {
+            duration: 4000,
+            position: 'top-center',
+          });
+        }, index * 100);
+      });
+    }
   };
 
   // Expose validation function to parent component
@@ -867,6 +931,7 @@ export default function SuperChoiceForm({
         readOnly={readOnly}
         stringsOnly={true}
         onDownArrow={() => employeeNumberRefs.current[0]?.focus()}
+        ref={fullNameRef}
       />
       
       <CharacterInput
@@ -948,6 +1013,7 @@ export default function SuperChoiceForm({
         width={814}
         height={25}
         readOnly={readOnly}
+        ref={superFundNameRef}
       />
       
       <CharacterInput
@@ -960,6 +1026,7 @@ export default function SuperChoiceForm({
         boxWidth={20}
         boxHeight={25}
         readOnly={readOnly}
+        inputRefs={superFundABNRefs}
       />
       
       <CharacterInput
@@ -972,6 +1039,7 @@ export default function SuperChoiceForm({
         boxWidth={20}
         boxHeight={25}
         readOnly={readOnly}
+        inputRefs={superFundUSIRefs}
       />
       
       <CharacterInput
@@ -981,6 +1049,7 @@ export default function SuperChoiceForm({
         top={472}
         left={42}
         readOnly={readOnly}
+        inputRefs={memberAccountNumberRefs}
       />
       
       <TextInput
@@ -991,6 +1060,7 @@ export default function SuperChoiceForm({
         width={810}
         height={25}
         readOnly={readOnly}
+        ref={accountNameRef}
       />
       
       <Checkbox
@@ -1045,6 +1115,7 @@ export default function SuperChoiceForm({
         left={70}
         width={756}
         readOnly={readOnly}
+        ref={businessNameRef}
       />
       
       <CharacterInput
@@ -1054,6 +1125,7 @@ export default function SuperChoiceForm({
         top={303}
         left={71}
         readOnly={readOnly}
+        inputRefs={businessABNRefs}
       />
       
       <TextInput
@@ -1063,6 +1135,7 @@ export default function SuperChoiceForm({
         left={71}
         width={756}
         readOnly={readOnly}
+        ref={defaultSuperFundNameRef}
       />
       
       <CharacterInput
@@ -1072,6 +1145,7 @@ export default function SuperChoiceForm({
         top={419}
         left={71}
         readOnly={readOnly}
+        inputRefs={defaultSuperFundABNRefs}
       />
       
       <CharacterInput
@@ -1081,6 +1155,7 @@ export default function SuperChoiceForm({
         top={477}
         left={71}
         readOnly={readOnly}
+        inputRefs={defaultSuperFundUSIRefs}
       />
       
       <Checkbox
@@ -1135,6 +1210,7 @@ export default function SuperChoiceForm({
         left={42}
         width={812}
         readOnly={readOnly}
+        ref={smsfNameRef}
       />
       
       <CharacterInput
@@ -1144,6 +1220,7 @@ export default function SuperChoiceForm({
         top={202}
         left={42}
         readOnly={readOnly}
+        inputRefs={smsfABNRefs}
       />
       
       <TextInput
@@ -1153,6 +1230,7 @@ export default function SuperChoiceForm({
         left={42}
         width={812}
         readOnly={readOnly}
+        ref={smsfESARef}
       />
       
       <TextInput
@@ -1162,6 +1240,7 @@ export default function SuperChoiceForm({
         left={42}
         width={812}
         readOnly={readOnly}
+        ref={smsfAccountNameRef}
       />
       
       <TextInput
@@ -1171,6 +1250,7 @@ export default function SuperChoiceForm({
         left={42}
         width={812}
         readOnly={readOnly}
+        ref={bankAccountNameRef}
       />
       
       <CharacterInput
@@ -1180,6 +1260,7 @@ export default function SuperChoiceForm({
         top={543}
         left={42}
         readOnly={readOnly}
+        inputRefs={bsbCodeRefs}
       />
       
       <CharacterInput
@@ -1189,6 +1270,7 @@ export default function SuperChoiceForm({
         top={601}
         left={42}
         readOnly={readOnly}
+        inputRefs={accountNumberRefs}
       />
       
       <Checkbox
@@ -1277,10 +1359,37 @@ export default function SuperChoiceForm({
       {/* Action Buttons */}
       {showButtons && (
         <div className="flex gap-4 mt-8 justify-center sticky bottom-4 bg-white p-4 rounded-lg shadow-lg">
-          <button className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+          <button
+            className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            onClick={() => {
+              toast.success("Your draft has been saved. You can return and finish it later.", {
+                duration: 4000,
+                position: 'top-center',
+              });
+            }}
+          >
             Save Draft
           </button>
-          <button className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+          <button
+            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            onClick={() => {
+              const { isValid, errors } = validateForm();
+              let missingFields: string[] = [];
+              errors.forEach((err) => {
+                // Extract field name for any error that ends with 'is required'
+                const match = err.match(/^(.*?) is required/);
+                if (match) missingFields.push(match[1]);
+              });
+              if (!isValid) {
+                showValidationErrors(errors, missingFields);
+                return;
+              }
+              toast.success("Your Super Choice Form was submitted successfully! Thank you.", {
+                duration: 4000,
+                position: 'top-center',
+              });
+            }}
+          >
             Submit Form
           </button>
         </div>

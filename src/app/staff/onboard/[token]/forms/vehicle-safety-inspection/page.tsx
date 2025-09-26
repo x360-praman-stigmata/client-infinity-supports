@@ -43,7 +43,7 @@ export default function VehicleSafetyInspectionFormPage() {
       const res = await fetch(`/api/staff/onboard/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formKey: 'vehicle_safety_inspection', data: {}, submit: isSubmit }),
+        body: JSON.stringify({ formKey: 'vehicle_safety_inspection', data: formData, submit: isSubmit }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || 'Failed to save');
@@ -78,22 +78,14 @@ export default function VehicleSafetyInspectionFormPage() {
     );
   }
 
-  const VehicleSafetyInspectionView = getStaffFormComponent('vehicle_safety_inspection', 'view');
+  const VehicleSafetyInspectionEdit = getStaffFormComponent('vehicle_safety_inspection', 'edit');
+
+  const handleFormChange = (values: any, field?: string) => {
+    setFormData(values);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
-      <style jsx>{`
-        .view-component-wrapper .text-gray-700 { color: #374151 !important; }
-        .view-component-wrapper .text-gray-600 { color: #4b5563 !important; }
-        .view-component-wrapper .text-gray-800 { color: #1f2937 !important; }
-        .view-component-wrapper .text-xs { font-size: 0.875rem !important; }
-        .view-component-wrapper { 
-          width: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-      `}</style>
       <div className="w-full max-w-7xl mx-auto px-2 md:px-6">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 mb-4 md:mb-8">
@@ -111,36 +103,15 @@ export default function VehicleSafetyInspectionFormPage() {
           </div>
         </div>
 
-        {/* View Component */}
-        <div className="bg-white rounded-lg shadow-lg p-2 md:p-6">
-          <div className="view-component-wrapper w-full">
-            <VehicleSafetyInspectionView data={formData} />
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
-            <button
-              onClick={() => handleSave(false)}
-              disabled={saving}
-              className={`px-6 py-2 text-white rounded-lg disabled:opacity-50 w-full sm:w-auto ${
-                saving 
-                  ? 'bg-rose-500 hover:bg-rose-600' 
-                  : 'bg-gray-500 hover:bg-gray-600'
-              }`}
-            >
-              {saving ? 'Saving...' : 'Save Draft'}
-            </button>
-            <button
-              onClick={() => handleSave(true)}
-              disabled={saving}
-              className={`px-6 py-2 text-white rounded-lg disabled:opacity-50 w-full sm:w-auto ${
-                saving 
-                  ? 'bg-rose-500 hover:bg-rose-600' 
-                  : 'bg-green-600 hover:bg-green-700'
-              }`}
-            >
-              {saving ? 'Submitting...' : 'Submit & Continue'}
-            </button>
-          </div>
+        {/* Edit Component */}
+        <div className="bg-white rounded-lg shadow-lg">
+          <VehicleSafetyInspectionEdit 
+            formData={formData}
+            commonFieldsData={{}}
+            onChange={handleFormChange}
+            handleSave={handleSave}
+            fieldErrors={{}}
+          />
         </div>
       </div>
     </div>

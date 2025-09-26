@@ -88,6 +88,7 @@ model Staff {
   ndisCodeOfConduct          StaffNdisCodeOfConduct?
   conflictOfInterest         StaffConflictOfInterest?
   documentationAcknowledgement StaffDocumentationAcknowledgement?
+  vehicleSafetyInspection    StaffVehicleSafetyInspection?
 }
 
 model StaffFormSubmission {
@@ -222,6 +223,19 @@ model StaffConflictOfInterest {
   staffId        Int       @unique
   data           Json
   // Signature fields like client forms
+  staffSignature String? // Staff's signature for this form
+  staffSignedAt  DateTime? // When staff signed this form
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  staff Staff @relation(fields: [staffId], references: [id])
+}
+
+// Specialized storage for Vehicle Safety Inspection Checklist form
+model StaffVehicleSafetyInspection {
+  id             Int       @id @default(autoincrement())
+  staffId        Int       @unique
+  data           Json
   staffSignature String? // Staff's signature for this form
   staffSignedAt  DateTime? // When staff signed this form
   createdAt      DateTime  @default(now())

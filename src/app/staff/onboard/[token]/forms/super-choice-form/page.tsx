@@ -34,7 +34,10 @@ export default function SuperChoiceFormPage() {
         }, 800); // Increased delay to ensure form is fully ready
       } catch (error: any) {
         console.error('Error loading data:', error);
-        alert(error.message);
+        toast.error(error.message || 'An error occurred.', {
+          duration: 4000,
+          position: 'top-center',
+        });
         setFormReady(true); // Show form even on error
       } finally {
         setLoading(false);
@@ -104,14 +107,23 @@ export default function SuperChoiceFormPage() {
       if (!res.ok) throw new Error(j.error || 'Failed to save');
       
       if (isSubmit) {
-        alert('Form submitted successfully!');
+        toast.success('Your Super Choice Form was submitted successfully! Thank you.', {
+          duration: 4000,
+          position: 'top-center',
+        });
         router.push(`/staff/onboard/${token}`);
       } else {
-        alert('Draft saved successfully!');
+        toast.success('Your draft has been saved. You can return and finish it later.', {
+          duration: 4000,
+          position: 'top-center',
+        });
       }
     } catch (error: any) {
       console.error('Error saving:', error);
-      alert(error.message);
+      toast.error(error.message || 'An error occurred.', {
+        duration: 4000,
+        position: 'top-center',
+      });
     } finally {
       setSaving(false);
     }
@@ -140,10 +152,16 @@ export default function SuperChoiceFormPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      alert('PDF downloaded successfully!');
+      toast.success('PDF downloaded successfully!', {
+        duration: 4000,
+        position: 'top-center',
+      });
     } catch (error: any) {
       console.error('Error downloading PDF:', error);
-      alert('Failed to download PDF: ' + error.message);
+      toast.error('Failed to download PDF: ' + error.message, {
+        duration: 4000,
+        position: 'top-center',
+      });
     } finally {
       setDownloading(false);
     }

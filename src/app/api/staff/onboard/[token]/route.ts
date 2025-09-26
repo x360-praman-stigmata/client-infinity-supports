@@ -566,6 +566,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
           throw error;
         }
       }
+    } else if (formKey === 'vehicle_safety_inspection') {
+      // Extract signature data if present
+      const { signature, signatureDate, ...formData } = data;
+      const signatureData = signature ? {
+        staffSignature: signature,
+        staffSignedAt: signatureDate ? new Date(signatureDate) : new Date()
+      } : {};
+      
+      try {
+        saved = await prisma.staffVehicleSafetyInspection.upsert({
+          where: { staffId: staff.id },
+          update: { 
+            data: formData,
+            ...signatureData
+          },
+          create: { 
+            staffId: staff.id, 
+            data: formData,
+            ...signatureData
+          },
+        });
+      } catch (error: any) {
+        if (error.code === 'P2021' && error.message.includes('StaffVehicleSafetyInspection')) {
+          // Table doesn't exist, use generic form submission
+          saved = await prisma.staffFormSubmission.upsert({
+            where: { staffId_formKey: { staffId: staff.id, formKey } },
+            update: { data, isSubmitted: !!submit, submittedAt: submit ? new Date() : null },
+            create: { staffId: staff.id, formKey, data, isSubmitted: !!submit, submittedAt: submit ? new Date() : null },
+          });
+        } else {
+          throw error;
+        }
+      }
     } else {
       // Generic form submission
       saved = await prisma.staffFormSubmission.upsert({
