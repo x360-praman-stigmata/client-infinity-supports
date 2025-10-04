@@ -717,9 +717,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
 
         if (allComplete && staff.status !== 'success') {
           await prisma.staff.update({ where: { id: staff.id }, data: { status: 'success' } });
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`[onboard] Marked staff ${staff.id} success (all forms completed)`);
+          }
         }
       } catch (err) {
-        console.warn('Completion check failed:', err);
+        if (process.env.NODE_ENV !== 'production') console.warn('Completion check failed:', err);
       }
     }
 

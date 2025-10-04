@@ -40,6 +40,9 @@ export default function StaffOnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [navigatingToForm, setNavigatingToForm] = useState<string | null>(null);
   const [copiedFormKey, setCopiedFormKey] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const allCompleted = forms.length > 0 && forms.every(f => f.completed);
 
   useEffect(() => {
     const loadStaffData = async () => {
@@ -52,6 +55,9 @@ export default function StaffOnboardingPage() {
         }
 
         setStaff(data.staff);
+        
+        // Check if staff status is already 'success' (submitted)
+        setIsSubmitted(data.staff?.status === 'success');
         
         // Calculate form completion status and enable next form
         const formStatuses = FORM_SEQUENCE.map((form, index) => {
@@ -281,6 +287,41 @@ export default function StaffOnboardingPage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Final Submit */}
+          <div className="mt-8 flex justify-end">
+            <button
+              disabled={!allCompleted || submitting || isSubmitted}
+              onClick={async () => {
+                if (isSubmitted) {
+                  toast.success('Your onboarding has already been submitted successfully!');
+                  return;
+                }
+                
+                setSubmitting(true);
+                try {
+                  const res = await fetch(`/api/staff/${staff.id}/recalculate-status`, { method: 'POST' });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || 'Failed to finalize');
+                  setIsSubmitted(true);
+                  toast.success('Onboarding completed successfully!');
+                } catch (e: any) {
+                  toast.error(e.message || 'Failed to finalize');
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+              className={`px-6 py-3 rounded-lg text-sm font-semibold transition-colors ${
+                isSubmitted 
+                  ? 'bg-green-600 text-white cursor-default' 
+                  : allCompleted && !submitting 
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {isSubmitted ? '✓ Submitted' : submitting ? 'Submitting…' : 'Submit Onboarding'}
+            </button>
           </div>
         </div>
       </div>

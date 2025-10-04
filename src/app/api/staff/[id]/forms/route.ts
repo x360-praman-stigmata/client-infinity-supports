@@ -18,21 +18,32 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     // Safely fetch each specialized form table (ignore if table doesn't exist)
-    const safe = async (fn: () => Promise<any>) => {
-      try { return await fn(); } catch (e: any) { if (e?.code === 'P2021') return null; throw e; }
+    const isDev = process.env.NODE_ENV !== 'production';
+    const safe = async (label: string, fn: () => Promise<any>) => {
+      try {
+        const v = await fn();
+        if (isDev) console.log(`[staff/forms] Table ok: ${label} → ${!!v}`);
+        return v;
+      } catch (e: any) {
+        if (e?.code === 'P2021') {
+          if (isDev) console.warn(`[staff/forms] Missing table for ${label}:`, e?.message);
+          return null;
+        }
+        throw e;
+      }
     };
 
-    const employmentDetails = await safe(() => db.staffEmploymentDetails.findUnique({ where: { staffId } }));
-    const employmentWelcomeAck = await safe(() => db.staffEmploymentWelcomeAck.findUnique({ where: { staffId } }));
-    const supportWorker = await safe(() => db.staffSupportWorker.findUnique({ where: { staffId } }));
-    const preEmploymentMedical = await safe(() => db.staffPreEmploymentMedical.findUnique({ where: { staffId } }));
-    const ndisWorkforceCapability = await safe(() => db.staffNdisWorkforceCapability.findUnique({ where: { staffId } }));
-    const bullyingHarassmentTraining = await safe(() => db.staffBullyingHarassmentTraining.findUnique({ where: { staffId } }));
-    const bullyingTraining = await safe(() => db.staffBullyingTraining?.findUnique({ where: { staffId } }));
-    const ndisCodeOfConduct = await safe(() => db.staffNdisCodeOfConduct?.findUnique({ where: { staffId } }));
-    const conflictOfInterest = await safe(() => db.staffConflictOfInterest?.findUnique({ where: { staffId } }));
-    const documentationAcknowledgement = await safe(() => db.staffDocumentationAcknowledgement?.findUnique({ where: { staffId } }));
-    const vehicleSafetyInspection = await safe(() => db.staffVehicleSafetyInspection?.findUnique({ where: { staffId } }));
+    const employmentDetails = await safe('employmentDetails', () => db.staffEmploymentDetails.findUnique({ where: { staffId } }));
+    const employmentWelcomeAck = await safe('employmentWelcomeAck', () => db.staffEmploymentWelcomeAck.findUnique({ where: { staffId } }));
+    const supportWorker = await safe('supportWorker', () => db.staffSupportWorker.findUnique({ where: { staffId } }));
+    const preEmploymentMedical = await safe('preEmploymentMedical', () => db.staffPreEmploymentMedical.findUnique({ where: { staffId } }));
+    const ndisWorkforceCapability = await safe('ndisWorkforceCapability', () => db.staffNdisWorkforceCapability.findUnique({ where: { staffId } }));
+    const bullyingHarassmentTraining = await safe('bullyingHarassmentTraining', () => db.staffBullyingHarassmentTraining.findUnique({ where: { staffId } }));
+    const bullyingTraining = await safe('bullyingTraining', () => db.staffBullyingTraining?.findUnique({ where: { staffId } }));
+    const ndisCodeOfConduct = await safe('ndisCodeOfConduct', () => db.staffNdisCodeOfConduct?.findUnique({ where: { staffId } }));
+    const conflictOfInterest = await safe('conflictOfInterest', () => db.staffConflictOfInterest?.findUnique({ where: { staffId } }));
+    const documentationAcknowledgement = await safe('documentationAcknowledgement', () => db.staffDocumentationAcknowledgement?.findUnique({ where: { staffId } }));
+    const vehicleSafetyInspection = await safe('vehicleSafetyInspection', () => db.staffVehicleSafetyInspection?.findUnique({ where: { staffId } }));
 
     // Fetch generic submissions for keys that may not have dedicated tables
     const genericKeys = [
@@ -55,6 +66,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     const getGeneric = (key: string) => genericSubs.find((g: any) => g.formKey === key && g.isSubmitted);
+    if (isDev) console.log('[staff/forms] generic submitted keys:', genericSubs.filter((g:any)=>g.isSubmitted).map((g:any)=>g.formKey));
 
     const forms = [
       {
@@ -171,7 +183,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       }
     ];
 
-    return NextResponse.json({ staff, forms });
+    const completedCount = forms.filter(f => f.status === 'completed').length;
+    if (isDev) console.log(`[staff/forms] staffId=${staffId} completed=${completedCount}/${forms.length}`);
+    return NextResponse.json({ staff, forms, completedCount });
   } catch (error: any) {
     console.error('Error fetching staff forms:', error);
     return NextResponse.json({ error: 'Failed to fetch staff forms' }, { status: 500 });

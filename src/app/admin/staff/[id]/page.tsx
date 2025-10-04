@@ -71,7 +71,11 @@ export default function StaffFormsPage() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([loadInfo(), loadForms()]);
+      await Promise.all([
+        fetch(`/api/staff/${id}/recalculate-status`, { method: 'POST' }).catch(()=>{}),
+        loadInfo(),
+        loadForms(),
+      ]);
       showToast({ type: 'success', title: 'Refreshed', message: 'Latest staff info and forms loaded' });
     } catch (e: any) {
       showToast({ type: 'error', title: 'Refresh failed', message: e?.message || 'Could not refresh data' });
