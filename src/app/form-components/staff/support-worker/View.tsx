@@ -263,16 +263,26 @@ export default function SupportWorkerView({ data, meta: metaProp }: { data?: any
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Name:</label>
-                        <div className="border-b-2 border-gray-400 h-8"></div>
+                        <div className="border-b-2 border-gray-400 h-8 flex items-center px-2 text-gray-900">
+                          {data?.name || data?.staff?.firstName + ' ' + data?.staff?.surname || ''}
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-6">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Signature:</label>
-                          <div className="border-b-2 border-gray-400 h-8"></div>
+                          <div className="border-b-2 border-gray-400 h-16 flex items-center justify-center">
+                            {data?.signature ? (
+                              <img src={data.signature} alt="Staff Signature" className="max-w-full max-h-full object-contain" />
+                            ) : (
+                              <span className="text-gray-400 text-sm">No signature</span>
+                            )}
+                          </div>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Date:</label>
-                          <div className="border-b-2 border-gray-400 h-8 text-center text-gray-500">/ /</div>
+                          <div className="border-b-2 border-gray-400 h-8 flex items-center px-2 text-gray-900">
+                            {data?.signatureDate || ''}
+                          </div>
                         </div>
                       </div>
                     </div>

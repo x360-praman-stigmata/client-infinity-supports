@@ -62,25 +62,25 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
                           <tr>
                             <td className="border border-gray-400 px-3 py-2 text-sm font-medium text-gray-700 w-1/2">Full Name</td>
                             <td className="border border-gray-400 px-3 py-2 text-sm text-gray-900 w-1/2">
-                              {data.fullName || `${staffInfo.firstName || ''} ${staffInfo.surname || ''}`.trim() || ''}
+                              {data.fullName || data.data?.fullName || `${data.staff?.firstName || ''} ${data.staff?.surname || ''}`.trim() || ''}
                             </td>
                           </tr>
                           <tr>
                             <td className="border border-gray-400 px-3 py-2 text-sm font-medium text-gray-700 w-1/2">Address</td>
                             <td className="border border-gray-400 px-3 py-2 text-sm text-gray-900 w-1/2">
-                              {data.address || ''}
+                              {data.address || data.data?.address || ''}
                             </td>
                           </tr>
                           <tr>
                             <td className="border border-gray-400 px-3 py-2 text-sm font-medium text-gray-700 w-1/2">Date of Birth</td>
                             <td className="border border-gray-400 px-3 py-2 text-sm text-gray-900 w-1/2">
-                              {data.dateOfBirth || ''}
+                              {data.dateOfBirth || data.data?.dateOfBirth || ''}
                             </td>
                           </tr>
                           <tr>
                             <td className="border border-gray-400 px-3 py-2 text-sm font-medium text-gray-700 w-1/2">Position Applied For</td>
                             <td className="border border-gray-400 px-3 py-2 text-sm text-gray-900 w-1/2">
-                              {data.positionApplied || ''}
+                              {data.positionApplied || data.data?.positionApplied || ''}
                             </td>
                           </tr>
                         </tbody>
@@ -129,13 +129,13 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
                             </td>
                             <td className="border border-gray-400 px-3 py-2 text-center">
                               <div className="flex flex-col items-center justify-center h-full">
-                                <div className={`w-5 h-5 rounded-full border-2 ${data.consent1 === 'yes' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                                <div className={`w-5 h-5 rounded-full border-2 ${(data.consentRecruitment || data.data?.consentRecruitment) === 'yes' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
                                 <span className="text-xs mt-1 text-gray-700">Yes</span>
                               </div>
                             </td>
                             <td className="border border-gray-400 px-3 py-2 text-center">
                               <div className="flex flex-col items-center justify-center h-full">
-                                <div className={`w-5 h-5 rounded-full border-2 ${data.consent1 === 'no' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                                <div className={`w-5 h-5 rounded-full border-2 ${(data.consentRecruitment || data.data?.consentRecruitment) === 'no' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
                                 <span className="text-xs mt-1 text-gray-700">No</span>
                               </div>
                             </td>
@@ -146,13 +146,13 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
                             </td>
                             <td className="border border-gray-400 px-3 py-2 text-center">
                               <div className="flex flex-col items-center justify-center h-full">
-                                <div className={`w-5 h-5 rounded-full border-2 ${data.consent2 === 'yes' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                                <div className={`w-5 h-5 rounded-full border-2 ${(data.consentFuturePositions || data.data?.consentFuturePositions) === 'yes' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
                                 <span className="text-xs mt-1 text-gray-700">Yes</span>
                               </div>
                             </td>
                             <td className="border border-gray-400 px-3 py-2 text-center">
                               <div className="flex flex-col items-center justify-center h-full">
-                                <div className={`w-5 h-5 rounded-full border-2 ${data.consent2 === 'no' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                                <div className={`w-5 h-5 rounded-full border-2 ${(data.consentFuturePositions || data.data?.consentFuturePositions) === 'no' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
                                 <span className="text-xs mt-1 text-gray-700">No</span>
                               </div>
                             </td>
@@ -163,13 +163,13 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
                             </td>
                             <td className="border border-gray-400 px-3 py-2 text-center">
                               <div className="flex flex-col items-center justify-center h-full">
-                                <div className={`w-5 h-5 rounded-full border-2 ${data.consent3 === 'yes' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                                <div className={`w-5 h-5 rounded-full border-2 ${(data.consentRefereeInquiries || data.data?.consentRefereeInquiries) === 'yes' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
                                 <span className="text-xs mt-1 text-gray-700">Yes</span>
                               </div>
                             </td>
                             <td className="border border-gray-400 px-3 py-2 text-center">
                               <div className="flex flex-col items-center justify-center h-full">
-                                <div className={`w-5 h-5 rounded-full border-2 ${data.consent3 === 'no' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                                <div className={`w-5 h-5 rounded-full border-2 ${(data.consentRefereeInquiries || data.data?.consentRefereeInquiries) === 'no' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
                                 <span className="text-xs mt-1 text-gray-700">No</span>
                               </div>
                             </td>
@@ -180,13 +180,13 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
                             </td>
                             <td className="border border-gray-400 px-3 py-2 text-center">
                               <div className="flex flex-col items-center justify-center h-full">
-                                <div className={`w-5 h-5 rounded-full border-2 ${data.consent4 === 'yes' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                                <div className={`w-5 h-5 rounded-full border-2 ${(data.consentPoliceCheck || data.data?.consentPoliceCheck) === 'yes' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
                                 <span className="text-xs mt-1 text-gray-700">Yes</span>
                               </div>
                             </td>
                             <td className="border border-gray-400 px-3 py-2 text-center">
                               <div className="flex flex-col items-center justify-center h-full">
-                                <div className={`w-5 h-5 rounded-full border-2 ${data.consent4 === 'no' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                                <div className={`w-5 h-5 rounded-full border-2 ${(data.consentPoliceCheck || data.data?.consentPoliceCheck) === 'no' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
                                 <span className="text-xs mt-1 text-gray-700">No</span>
                               </div>
                             </td>
@@ -219,13 +219,13 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
                           </td>
                           <td className="border border-black px-3 py-2 text-center w-20">
                             <div className="flex flex-col items-center justify-center h-full">
-                              <div className={`w-5 h-5 rounded-full border-2 ${data.educationalCheck === 'yes' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                              <div className={`w-5 h-5 rounded-full border-2 ${(data.consentEducationalCheck || data.data?.consentEducationalCheck) === 'yes' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
                               <span className="text-xs mt-1 text-gray-700">Yes</span>
                             </div>
                           </td>
                           <td className="border border-black px-3 py-2 text-center w-20">
                             <div className="flex flex-col items-center justify-center h-full">
-                              <div className={`w-5 h-5 rounded-full border-2 ${data.educationalCheck === 'no' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                              <div className={`w-5 h-5 rounded-full border-2 ${(data.consentEducationalCheck || data.data?.consentEducationalCheck) === 'no' ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
                               <span className="text-xs mt-1 text-gray-700">No</span>
                             </div>
                           </td>
