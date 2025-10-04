@@ -653,8 +653,76 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     }
     
     // Note: Individual form completion is tracked by the presence of data in submissions
-    // The staff status should only be updated when ALL required forms are completed
-    
+    // If submitted, check if all required forms are completed and promote status
+    if (submit) {
+      try {
+        const REQUIRED_KEYS = [
+          'employeeDetails',
+          'employee_welcome',
+          'support_worker',
+          'pre_employment_medical',
+          'ndis_workforce_capability',
+          'bullying_harassment_training',
+          'bullying_training',
+          'documentation_acknowledgement',
+          'ndis_code_of_conduct',
+          'fair_work_information',
+          'casual_employment_information',
+          'orientation',
+          'govt_tax',
+          'super_choice_form',
+          'vehicle_safety_inspection',
+          'conflict_of_interest',
+        ];
+
+        const full = await prisma.staff.findUnique({
+          where: { id: staff.id },
+          include: {
+            employmentDetails: true,
+            employmentWelcomeAck: true,
+            supportWorker: true,
+            preEmploymentMedical: true,
+            ndisWorkforceCapability: true,
+            bullyingHarassmentTraining: true,
+            bullyingTraining: true,
+            ndisCodeOfConduct: true,
+            conflictOfInterest: true,
+            documentationAcknowledgement: true,
+            vehicleSafetyInspection: true,
+            submissions: { where: { isSubmitted: true } },
+          }
+        });
+
+        const submittedKeys = new Set<string>([
+          ...(full?.submissions?.map((s: any) => s.formKey) || []),
+        ]);
+
+        const allComplete = REQUIRED_KEYS.every((key) => {
+          switch (key) {
+            case 'employeeDetails': return !!full?.employmentDetails;
+            case 'employee_welcome': return !!full?.employmentWelcomeAck;
+            case 'support_worker': return !!full?.supportWorker;
+            case 'pre_employment_medical': return !!full?.preEmploymentMedical;
+            case 'ndis_workforce_capability': return !!full?.ndisWorkforceCapability;
+            case 'bullying_harassment_training': return !!full?.bullyingHarassmentTraining;
+            case 'bullying_training': return !!full?.bullyingTraining;
+            case 'ndis_code_of_conduct': return !!full?.ndisCodeOfConduct || submittedKeys.has('ndis_code_of_conduct');
+            case 'conflict_of_interest': return !!full?.conflictOfInterest || submittedKeys.has('conflict_of_interest');
+            case 'documentation_acknowledgement': return !!full?.documentationAcknowledgement || submittedKeys.has('documentation_acknowledgement');
+            case 'vehicle_safety_inspection': return !!full?.vehicleSafetyInspection || submittedKeys.has('vehicle_safety_inspection');
+            default:
+              return submittedKeys.has(key);
+          }
+        });
+
+        if (allComplete && staff.status !== 'success') {
+          await prisma.staff.update({ where: { id: staff.id }, data: { status: 'success' } });
+        }
+      } catch (err) {
+        console.warn('Completion check failed:', err);
+      }
+    }
+
     // Return success response with appropriate message
     const action = submit ? 'submitted' : 'saved';
     return NextResponse.json({ 

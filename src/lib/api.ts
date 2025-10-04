@@ -216,6 +216,24 @@ export async function generateStaffLink(staffId: number) {
   return res.json();
 }
 
+export async function getStaffById(id: number) {
+  const res = await fetch(`/api/staff/${id}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to fetch staff');
+  }
+  return res.json();
+}
+
+export async function deleteStaff(id: number) {
+  const res = await fetch(`/api/staff/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to delete staff');
+  }
+  return res.json();
+}
+
 // Client Forms API functions
 export async function getClientForms(clientId: number) {
   const response = await fetch(`/api/clients/${clientId}/forms`);

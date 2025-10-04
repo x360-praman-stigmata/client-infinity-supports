@@ -7,64 +7,167 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const staffId = parseInt(id);
     
     const db: any = prisma as any;
+
+    // Fetch basic staff record first (no includes to avoid table-missing errors)
     const staff = await db.staff.findUnique({
       where: { id: staffId },
-      include: {
-        employmentDetails: true,
-        employmentWelcomeAck: true,
-        supportWorker: true,
-        preEmploymentMedical: true,
-        ndisWorkforceCapability: true,
-        bullyingHarassmentTraining: true,
-      }
     });
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff not found' }, { status: 404 });
     }
 
+    // Safely fetch each specialized form table (ignore if table doesn't exist)
+    const safe = async (fn: () => Promise<any>) => {
+      try { return await fn(); } catch (e: any) { if (e?.code === 'P2021') return null; throw e; }
+    };
+
+    const employmentDetails = await safe(() => db.staffEmploymentDetails.findUnique({ where: { staffId } }));
+    const employmentWelcomeAck = await safe(() => db.staffEmploymentWelcomeAck.findUnique({ where: { staffId } }));
+    const supportWorker = await safe(() => db.staffSupportWorker.findUnique({ where: { staffId } }));
+    const preEmploymentMedical = await safe(() => db.staffPreEmploymentMedical.findUnique({ where: { staffId } }));
+    const ndisWorkforceCapability = await safe(() => db.staffNdisWorkforceCapability.findUnique({ where: { staffId } }));
+    const bullyingHarassmentTraining = await safe(() => db.staffBullyingHarassmentTraining.findUnique({ where: { staffId } }));
+    const bullyingTraining = await safe(() => db.staffBullyingTraining?.findUnique({ where: { staffId } }));
+    const ndisCodeOfConduct = await safe(() => db.staffNdisCodeOfConduct?.findUnique({ where: { staffId } }));
+    const conflictOfInterest = await safe(() => db.staffConflictOfInterest?.findUnique({ where: { staffId } }));
+    const documentationAcknowledgement = await safe(() => db.staffDocumentationAcknowledgement?.findUnique({ where: { staffId } }));
+    const vehicleSafetyInspection = await safe(() => db.staffVehicleSafetyInspection?.findUnique({ where: { staffId } }));
+
+    // Fetch generic submissions for keys that may not have dedicated tables
+    const genericKeys = [
+      'fair_work_information',
+      'casual_employment_information',
+      'orientation',
+      'govt_tax',
+      'super_choice_form',
+      // Keep ndis_code_of_conduct & conflict_of_interest here only as fallback if tables are absent
+      'ndis_code_of_conduct',
+      'conflict_of_interest',
+      'documentation_acknowledgement',
+      // Vehicle safety may be stored as generic when table is missing
+      'vehicle_safety_inspection',
+    ];
+
+    const genericSubs = await db.staffFormSubmission.findMany({
+      where: { staffId, formKey: { in: genericKeys } },
+      select: { formKey: true, isSubmitted: true, updatedAt: true }
+    });
+
+    const getGeneric = (key: string) => genericSubs.find((g: any) => g.formKey === key && g.isSubmitted);
+
     const forms = [
       {
         formType: 'employment-details',
         formName: 'Employment Details',
-        status: staff.employmentDetails ? 'completed' : 'pending',
-        completedAt: staff.employmentDetails?.createdAt?.toLocaleDateString(),
-        hasSignature: !!staff.employmentDetails?.staffSignature
+        status: employmentDetails ? 'completed' : 'pending',
+        completedAt: employmentDetails?.createdAt?.toLocaleDateString(),
+        hasSignature: !!employmentDetails?.staffSignature
       },
       {
         formType: 'employment-welcome',
         formName: 'Employment Welcome Acknowledgment',
-        status: staff.employmentWelcomeAck ? 'completed' : 'pending',
-        completedAt: staff.employmentWelcomeAck?.createdAt?.toLocaleDateString(),
-        hasSignature: !!staff.employmentWelcomeAck?.staffSignature
+        status: employmentWelcomeAck ? 'completed' : 'pending',
+        completedAt: employmentWelcomeAck?.createdAt?.toLocaleDateString(),
+        hasSignature: !!employmentWelcomeAck?.staffSignature
       },
       {
         formType: 'support-worker',
         formName: 'Support Worker Form',
-        status: staff.supportWorker ? 'completed' : 'pending',
-        completedAt: staff.supportWorker?.createdAt?.toLocaleDateString(),
-        hasSignature: !!staff.supportWorker?.staffSignature
+        status: supportWorker ? 'completed' : 'pending',
+        completedAt: supportWorker?.createdAt?.toLocaleDateString(),
+        hasSignature: !!supportWorker?.staffSignature
       },
       {
         formType: 'pre-employment-medical',
         formName: 'Pre-Employment Medical',
-        status: staff.preEmploymentMedical ? 'completed' : 'pending',
-        completedAt: staff.preEmploymentMedical?.createdAt?.toLocaleDateString(),
-        hasSignature: !!staff.preEmploymentMedical?.staffSignature
+        status: preEmploymentMedical ? 'completed' : 'pending',
+        completedAt: preEmploymentMedical?.createdAt?.toLocaleDateString(),
+        hasSignature: !!preEmploymentMedical?.staffSignature
       },
       {
         formType: 'ndis-workforce',
         formName: 'NDIS Workforce Capability',
-        status: staff.ndisWorkforceCapability ? 'completed' : 'pending',
-        completedAt: staff.ndisWorkforceCapability?.createdAt?.toLocaleDateString(),
-        hasSignature: !!staff.ndisWorkforceCapability?.staffSignature
+        status: ndisWorkforceCapability ? 'completed' : 'pending',
+        completedAt: ndisWorkforceCapability?.createdAt?.toLocaleDateString(),
+        hasSignature: !!ndisWorkforceCapability?.staffSignature
       },
       {
         formType: 'bullying-harassment',
         formName: 'Bullying & Harassment Training',
-        status: staff.bullyingHarassmentTraining ? 'completed' : 'pending',
-        completedAt: staff.bullyingHarassmentTraining?.createdAt?.toLocaleDateString(),
-        hasSignature: !!staff.bullyingHarassmentTraining?.staffSignature
+        status: bullyingHarassmentTraining ? 'completed' : 'pending',
+        completedAt: bullyingHarassmentTraining?.createdAt?.toLocaleDateString(),
+        hasSignature: !!bullyingHarassmentTraining?.staffSignature
+      },
+      {
+        formType: 'bullying-training',
+        formName: 'Bullying Training',
+        status: bullyingTraining ? 'completed' : 'pending',
+        completedAt: bullyingTraining?.createdAt?.toLocaleDateString(),
+        hasSignature: !!bullyingTraining?.staffSignature
+      },
+      {
+        formType: 'ndis-code-of-conduct',
+        formName: 'NDIS Code of Conduct',
+        status: ndisCodeOfConduct ? 'completed' : (getGeneric('ndis_code_of_conduct') ? 'completed' : 'pending'),
+        completedAt: ndisCodeOfConduct?.createdAt?.toLocaleDateString(),
+        hasSignature: !!ndisCodeOfConduct?.staffSignature
+      },
+      {
+        formType: 'fair-work-information',
+        formName: 'Fair Work Information Statement',
+        status: getGeneric('fair_work_information') ? 'completed' : 'pending',
+        completedAt: getGeneric('fair_work_information')?.updatedAt?.toLocaleDateString(),
+        hasSignature: false
+      },
+      {
+        formType: 'casual-employment-information',
+        formName: 'Casual Employment Information Statement',
+        status: getGeneric('casual_employment_information') ? 'completed' : 'pending',
+        completedAt: getGeneric('casual_employment_information')?.updatedAt?.toLocaleDateString(),
+        hasSignature: false
+      },
+      {
+        formType: 'orientation',
+        formName: 'Staff Orientation',
+        status: getGeneric('orientation') ? 'completed' : 'pending',
+        completedAt: getGeneric('orientation')?.updatedAt?.toLocaleDateString(),
+        hasSignature: false
+      },
+      {
+        formType: 'govt-tax',
+        formName: 'Government Tax',
+        status: getGeneric('govt_tax') ? 'completed' : 'pending',
+        completedAt: getGeneric('govt_tax')?.updatedAt?.toLocaleDateString(),
+        hasSignature: false
+      },
+      {
+        formType: 'super-choice-form',
+        formName: 'Superannuation Standard Choice Form',
+        status: getGeneric('super_choice_form') ? 'completed' : 'pending',
+        completedAt: getGeneric('super_choice_form')?.updatedAt?.toLocaleDateString(),
+        hasSignature: false
+      },
+      {
+        formType: 'vehicle-safety-inspection',
+        formName: 'Vehicle Safety Inspection Checklist',
+        status: vehicleSafetyInspection ? 'completed' : (getGeneric('vehicle_safety_inspection') ? 'completed' : 'pending'),
+        completedAt: vehicleSafetyInspection?.createdAt?.toLocaleDateString() || getGeneric('vehicle_safety_inspection')?.updatedAt?.toLocaleDateString(),
+        hasSignature: !!vehicleSafetyInspection?.staffSignature
+      },
+      {
+        formType: 'conflict-of-interest',
+        formName: 'Conflict of Interest Disclosure',
+        status: conflictOfInterest ? 'completed' : (getGeneric('conflict_of_interest') ? 'completed' : 'pending'),
+        completedAt: conflictOfInterest?.createdAt?.toLocaleDateString(),
+        hasSignature: !!conflictOfInterest?.staffSignature
+      },
+      {
+        formType: 'documentation-acknowledgement',
+        formName: 'Documentation Acknowledgement',
+        status: documentationAcknowledgement ? 'completed' : (getGeneric('documentation_acknowledgement') ? 'completed' : 'pending'),
+        completedAt: documentationAcknowledgement?.createdAt?.toLocaleDateString(),
+        hasSignature: !!documentationAcknowledgement?.staffSignature
       }
     ];
 
