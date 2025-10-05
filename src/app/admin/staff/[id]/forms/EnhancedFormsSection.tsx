@@ -105,15 +105,54 @@ export default function EnhancedFormsSection({ staffId }: EnhancedFormsSectionPr
         hasDataData: !!currentFormData.data,
         dataDataKeys: currentFormData.data ? Object.keys(currentFormData.data) : [],
         signatureFields: {
+          staffSignature: !!currentFormData.staffSignature,
           signature: !!currentFormData.signature,
           disclosureSignature: !!currentFormData.disclosureSignature,
           declarationSignature: !!currentFormData.declarationSignature,
+          staffSignedAt: !!currentFormData.staffSignedAt,
           signatureDate: !!currentFormData.signatureDate,
           disclosureDate: !!currentFormData.disclosureDate,
           declarationDate: !!currentFormData.declarationDate
         }
       });
     }
+
+    // Helper function to find any signature in the data
+    const findSignature = () => {
+      // Check root level signature fields
+      if (currentFormData.staffSignature) return currentFormData.staffSignature;
+      if (currentFormData.signature) return currentFormData.signature;
+      if (currentFormData.disclosureSignature) return currentFormData.disclosureSignature;
+      if (currentFormData.declarationSignature) return currentFormData.declarationSignature;
+      
+      // Check data.data level signature fields
+      if (currentFormData.data?.staffSignature) return currentFormData.data.staffSignature;
+      if (currentFormData.data?.signature) return currentFormData.data.signature;
+      if (currentFormData.data?.disclosureSignature) return currentFormData.data.disclosureSignature;
+      if (currentFormData.data?.declarationSignature) return currentFormData.data.declarationSignature;
+      
+      return null;
+    };
+
+    // Helper function to find any signature date
+    const findSignatureDate = () => {
+      // Check root level date fields
+      if (currentFormData.staffSignedAt) return new Date(currentFormData.staffSignedAt).toLocaleString();
+      if (currentFormData.signatureDate) return new Date(currentFormData.signatureDate).toLocaleString();
+      if (currentFormData.disclosureDate) return new Date(currentFormData.disclosureDate).toLocaleString();
+      if (currentFormData.declarationDate) return new Date(currentFormData.declarationDate).toLocaleString();
+      
+      // Check data.data level date fields
+      if (currentFormData.data?.staffSignedAt) return new Date(currentFormData.data.staffSignedAt).toLocaleString();
+      if (currentFormData.data?.signatureDate) return new Date(currentFormData.data.signatureDate).toLocaleString();
+      if (currentFormData.data?.disclosureDate) return new Date(currentFormData.data.disclosureDate).toLocaleString();
+      if (currentFormData.data?.declarationDate) return new Date(currentFormData.data.declarationDate).toLocaleString();
+      
+      return 'Not signed';
+    };
+
+    const signatureImage = findSignature();
+    const signatureDate = findSignatureDate();
 
     // Use View Component if available with error boundary
     if (formConfig?.viewComponent) {
@@ -171,25 +210,32 @@ export default function EnhancedFormsSection({ staffId }: EnhancedFormsSectionPr
             <div>
               <h5 className="font-medium mb-3 text-gray-900">Signature & Completion</h5>
               <div className="space-y-4">
-                {currentFormData.staffSignature && (
+                {signatureImage ? (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Staff Signature</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Staff Signature ✅
+                    </label>
                     <img 
-                      src={currentFormData.staffSignature} 
+                      src={signatureImage} 
                       alt="Staff Signature" 
                       className="border border-gray-300 rounded max-w-full h-20 object-contain bg-white"
                     />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-2">
+                      Staff Signature ❌
+                    </label>
+                    <div className="border border-gray-300 rounded h-20 bg-gray-100 flex items-center justify-center">
+                      <span className="text-gray-400 text-sm">No signature provided</span>
+                    </div>
                   </div>
                 )}
                 
                 <div className="bg-white border border-gray-200 rounded p-3 space-y-2">
                   <div className="text-sm">
                     <span className="font-medium text-gray-600">Completed:</span>
-                    <span className="ml-2 text-gray-800">
-                      {currentFormData.staffSignedAt ? 
-                        new Date(currentFormData.staffSignedAt).toLocaleString() : 
-                        'Not signed'}
-                    </span>
+                    <span className="ml-2 text-gray-800">{signatureDate}</span>
                   </div>
                   <div className="text-sm">
                     <span className="font-medium text-gray-600">Created:</span>

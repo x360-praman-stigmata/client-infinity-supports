@@ -35,6 +35,17 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
 
   // Helper function to get field value from multiple possible locations
   const getValue = (fieldName: string) => {
+    // Handle signature fields - check both data.data and root level
+    if (fieldName === 'signature' || fieldName === 'disclosureSignature' || fieldName === 'declarationSignature') {
+      return data.staffSignature || data.data?.[fieldName] || data[fieldName] || '';
+    }
+    
+    // Handle date fields - check both data.data and root level, also check staffSignedAt
+    if (fieldName === 'signatureDate' || fieldName === 'disclosureDate' || fieldName === 'declarationDate') {
+      const dateValue = data.staffSignedAt || data.data?.[fieldName] || data[fieldName] || '';
+      return dateValue ? new Date(dateValue).toLocaleDateString() : '';
+    }
+    
     const value = data[fieldName] || data.data?.[fieldName] || '';
     
     // Debug signature fields
@@ -43,6 +54,8 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
         hasValue: !!value,
         valueLength: value?.length || 0,
         valueType: typeof value,
+        staffSignature: !!data.staffSignature,
+        staffSignedAt: !!data.staffSignedAt,
         dataKeys: Object.keys(data),
         dataDataKeys: data.data ? Object.keys(data.data) : []
       });
