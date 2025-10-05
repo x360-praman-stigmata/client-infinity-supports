@@ -5,7 +5,72 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
   try {
     const { token } = await params;
     
-    // Validate token format
+    // Handle admin view tokens
+    if (token.startsWith('admin-view-')) {
+      const staffId = token.replace('admin-view-', '');
+      
+      // Only include relations that exist in the database
+      const staff = await prisma.staff.findFirst({
+        where: { id: parseInt(staffId) },
+        include: {
+          submissions: true,
+          employmentDetails: true,
+          employmentWelcomeAck: true,
+          supportWorker: true,
+          preEmploymentMedical: true,
+          ndisWorkforceCapability: true,
+          bullyingHarassmentTraining: true,
+          bullyingTraining: true,
+          ndisCodeOfConduct: true,
+          conflictOfInterest: true,
+          documentationAcknowledgement: true,
+          // vehicleSafetyInspection: true, // This table doesn't exist yet
+        }
+      });
+
+      if (!staff) {
+        return NextResponse.json({ 
+          error: 'Staff not found',
+          message: 'Staff member not found.',
+          code: 'STAFF_NOT_FOUND'
+        }, { status: 404 });
+      }
+
+      // Format submissions for compatibility - include both dedicated tables and generic submissions
+      const submissions: any = {};
+      if (staff.employmentDetails) submissions.employeeDetails = staff.employmentDetails;
+      if (staff.employmentWelcomeAck) submissions.employee_welcome = staff.employmentWelcomeAck;
+      if (staff.supportWorker) submissions.support_worker = staff.supportWorker;
+      if (staff.preEmploymentMedical) submissions.pre_employment_medical = staff.preEmploymentMedical;
+      if (staff.ndisWorkforceCapability) submissions.ndis_workforce_capability = staff.ndisWorkforceCapability;
+      if (staff.bullyingHarassmentTraining) submissions.bullying_harassment_training = staff.bullyingHarassmentTraining;
+      if (staff.bullyingTraining) submissions.bullying_training = staff.bullyingTraining;
+      if (staff.ndisCodeOfConduct) submissions.ndis_code_of_conduct = staff.ndisCodeOfConduct;
+      if (staff.conflictOfInterest) submissions.conflict_of_interest = staff.conflictOfInterest;
+      if (staff.documentationAcknowledgement) submissions.documentation_acknowledgement = staff.documentationAcknowledgement;
+      
+      // Include generic form submissions (forms stored in staffFormSubmission table)
+      if (staff.submissions && Array.isArray(staff.submissions)) {
+        staff.submissions.forEach((submission: any) => {
+          submissions[submission.formKey] = submission.data;
+        });
+      }
+
+      return NextResponse.json({
+        staff: {
+          id: staff.id,
+          firstName: staff.firstName,
+          surname: staff.surname,
+          email: staff.email,
+          phone: staff.phone,
+          status: staff.status
+        },
+        submissions,
+        token
+      });
+    }
+    
+    // Validate token format for regular tokens
     if (!token || typeof token !== 'string' || token.length < 10) {
       return NextResponse.json({ 
         error: 'Invalid access link',
@@ -141,13 +206,30 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
       };
     }
     
-    // Handle Pre-Employment Medical form with signature
+    // Handle Pre-Employment Medical form with all signature fields
     if (staff.preEmploymentMedical) {
+      const formData = staff.preEmploymentMedical.data as any || {};
+      
       dataByForm['pre_employment_medical'] = {
-        ...(staff.preEmploymentMedical.data as any || {}),
+        ...formData,
+        // Educational Check signature (from main signature field)
         signature: staff.preEmploymentMedical.staffSignature || '',
-        signatureDate: staff.preEmploymentMedical.staffSignedAt?.toISOString().split('T')[0] || ''
+        signatureDate: staff.preEmploymentMedical.staffSignedAt?.toISOString().split('T')[0] || '',
+        // Include all signature fields from form data
+        disclosureSignature: formData.disclosureSignature || '',
+        disclosureDate: formData.disclosureDate || '',
+        declarationSignature: formData.declarationSignature || '',
+        declarationDate: formData.declarationDate || ''
       };
+      
+      console.log('🔍 Pre-Employment Medical Signature Fields:', {
+        hasMainSignature: !!staff.preEmploymentMedical.staffSignature,
+        hasDisclosureSignature: !!formData.disclosureSignature,
+        hasDeclarationSignature: !!formData.declarationSignature,
+        hasDisclosureDate: !!formData.disclosureDate,
+        hasDeclarationDate: !!formData.declarationDate,
+        formDataKeys: Object.keys(formData).filter(key => key.includes('signature') || key.includes('Date'))
+      });
     }
     
     // Handle NDIS Workforce Capability Framework form with signature
@@ -197,7 +279,34 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
         staffSignature: staff.conflictOfInterest.staffSignature || '',
         staffSignedAt: staff.conflictOfInterest.staffSignedAt?.toISOString() || ''
       };
-    }    return NextResponse.json({
+    }
+    
+    console.log('📊 Admin View - Staff data loaded:', {
+      staffId: staff.id,
+      staffName: `${staff.firstName} ${staff.surname}`,
+      availableForms: Object.keys(dataByForm),
+      totalForms: Object.keys(dataByForm).length,
+      hasPreEmploymentMedical: !!dataByForm.pre_employment_medical,
+      preEmploymentKeys: dataByForm.pre_employment_medical ? Object.keys(dataByForm.pre_employment_medical) : []
+    });
+    
+    // Debug Pre-Employment Medical data specifically
+    if (dataByForm.pre_employment_medical) {
+      console.log('🔍 Pre-Employment Medical Data Debug:', {
+        hasSignature: !!dataByForm.pre_employment_medical.signature,
+        hasDisclosureSignature: !!dataByForm.pre_employment_medical.disclosureSignature,
+        hasDeclarationSignature: !!dataByForm.pre_employment_medical.declarationSignature,
+        hasSignatureDate: !!dataByForm.pre_employment_medical.signatureDate,
+        hasDisclosureDate: !!dataByForm.pre_employment_medical.disclosureDate,
+        hasDeclarationDate: !!dataByForm.pre_employment_medical.declarationDate,
+        allKeys: Object.keys(dataByForm.pre_employment_medical),
+        signatureLength: dataByForm.pre_employment_medical.signature?.length || 0,
+        disclosureSignatureLength: dataByForm.pre_employment_medical.disclosureSignature?.length || 0,
+        declarationSignatureLength: dataByForm.pre_employment_medical.declarationSignature?.length || 0
+      });
+    }
+    
+    return NextResponse.json({
       success: true,
       message: 'Staff data loaded successfully',
       staff: {
@@ -385,11 +494,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       });
     } else if (formKey === 'pre_employment_medical') {
       // Extract signature data if present
-      const { signature, signatureDate, ...formData } = data;
+      const { signature, signatureDate, declarationSignature, declarationDate, disclosureSignature, disclosureDate, ...otherData } = data;
       const signatureData = signature ? {
         staffSignature: signature,
         staffSignedAt: signatureDate ? new Date(signatureDate) : new Date()
       } : {};
+      
+      // Include all signature fields in the formData so they're saved to the database
+      const formData = {
+        ...otherData,
+        declarationSignature,
+        declarationDate,
+        disclosureSignature,
+        disclosureDate
+      };
+      
+      console.log('💾 PreEmploymentMedical - Processing submission:', {
+        staffId: staff.id,
+        staffName: `${staff.firstName} ${staff.surname}`,
+        submit,
+        hasSignature: !!signature,
+        hasDeclarationSignature: !!declarationSignature,
+        hasDisclosureSignature: !!disclosureSignature,
+        formFields: Object.keys(formData).length,
+        totalDataFields: Object.keys(data).length
+      });
       
       saved = await prisma.staffPreEmploymentMedical.upsert({
         where: { staffId: staff.id },

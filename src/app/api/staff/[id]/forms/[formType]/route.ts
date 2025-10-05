@@ -9,6 +9,8 @@ export async function GET(
     const { id, formType } = await params;
     const staffId = parseInt(id);
 
+    console.log(`[API] Request: staffId=${staffId}, formType=${formType}`);
+
     if (!staffId || !formType) {
       return new NextResponse("Missing staffId or formType", { status: 400 });
     }
@@ -23,183 +25,124 @@ export async function GET(
       return new NextResponse("Staff not found", { status: 404 });
     }
 
-    // Get form data based on form type
-    let formData = null;
-    
-    // Handle both formats (kebab-case vs snake_case)
-    const normalizedFormType = formType === 'employment-details' ? 'employee_details' :
-                              formType === 'employment-welcome' ? 'employee_welcome' :
-                              formType === 'support-worker' ? 'support_worker' :
-                              formType === 'pre-employment-medical' ? 'pre_employment_medical' :
-                              formType === 'ndis-workforce' ? 'ndis_workforce_capability' :
-                              formType === 'bullying-harassment' ? 'bullying_harassment_training' :
-                              formType === 'bullying-training' ? 'bullying_training' :
-                              formType === 'ndis-code-of-conduct' ? 'ndis_code_of_conduct' :
-                              formType === 'fair-work-information' ? 'fair_work_information' :
-                              formType === 'casual-employment-information' ? 'casual_employment_information' :
-                              formType === 'govt-tax' ? 'govt_tax' :
-                              formType === 'super-choice-form' ? 'super_choice_form' :
-                              formType === 'vehicle-safety-inspection' ? 'vehicle_safety_inspection' :
-                              formType === 'conflict-of-interest' ? 'conflict_of_interest' :
-                              formType === 'documentation-acknowledgement' ? 'documentation_acknowledgement' :
-                              formType;
-
-    // Helper function to safely query tables
-    const safeQuery = async (tableName: string, queryFn: () => Promise<any>) => {
-      try {
-        return await queryFn();
-      } catch (error: any) {
-        if (error?.code === 'P2021') {
-          console.log(`Table ${tableName} does not exist, checking generic submissions`);
-          return null;
-        }
-        throw error;
-      }
+    // Map form types
+    const formKeyMap: Record<string, string> = {
+      'employment-details': 'employeeDetails',
+      'employment-welcome': 'employee_welcome', 
+      'support-worker': 'support_worker',
+      'pre-employment-medical': 'pre_employment_medical',
+      'ndis-workforce': 'ndis_workforce_capability',
+      'bullying-harassment': 'bullying_harassment_training',
+      'bullying-training': 'bullying_training',
+      'ndis-code-of-conduct': 'ndis_code_of_conduct',
+      'fair-work-information': 'fair_work_information',
+      'casual-employment-information': 'casual_employment_information',
+      'orientation': 'orientation',
+      'govt-tax': 'govt_tax',
+      'super-choice-form': 'super_choice_form',
+      'vehicle-safety-inspection': 'vehicle_safety_inspection',
+      'conflict-of-interest': 'conflict_of_interest',
+      'documentation-acknowledgement': 'documentation_acknowledgement'
     };
 
-    // First try dedicated tables
-    switch (normalizedFormType) {
-      case 'employee_details':
-        formData = await safeQuery('staffEmploymentDetails', () => 
-          (prisma as any).staffEmploymentDetails.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'employee_welcome':
-        formData = await safeQuery('staffEmploymentWelcomeAck', () => 
-          (prisma as any).staffEmploymentWelcomeAck.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'support_worker':
-        formData = await safeQuery('staffSupportWorker', () => 
-          (prisma as any).staffSupportWorker.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'pre_employment_medical':
-        formData = await safeQuery('staffPreEmploymentMedical', () => 
-          (prisma as any).staffPreEmploymentMedical.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'ndis_workforce_capability':
-        formData = await safeQuery('staffNdisWorkforceCapability', () => 
-          (prisma as any).staffNdisWorkforceCapability.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'bullying_harassment_training':
-        formData = await safeQuery('staffBullyingHarassmentTraining', () => 
-          (prisma as any).staffBullyingHarassmentTraining.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'bullying_training':
-        formData = await safeQuery('staffBullyingTraining', () => 
-          (prisma as any).staffBullyingTraining.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'ndis_code_of_conduct':
-        formData = await safeQuery('staffNdisCodeOfConduct', () => 
-          (prisma as any).staffNdisCodeOfConduct.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'fair_work_information':
-        formData = await safeQuery('staffFairWorkInformation', () => 
-          (prisma as any).staffFairWorkInformation.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'casual_employment_information':
-        formData = await safeQuery('staffCasualEmploymentInformation', () => 
-          (prisma as any).staffCasualEmploymentInformation.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'orientation':
-        formData = await safeQuery('staffOrientation', () => 
-          (prisma as any).staffOrientation.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'vehicle_safety_inspection':
-        formData = await safeQuery('staffVehicleSafetyInspection', () => 
-          (prisma as any).staffVehicleSafetyInspection.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'conflict_of_interest':
-        formData = await safeQuery('staffConflictOfInterest', () => 
-          (prisma as any).staffConflictOfInterest.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'documentation_acknowledgement':
-        formData = await safeQuery('staffDocumentationAcknowledgement', () => 
-          (prisma as any).staffDocumentationAcknowledgement.findUnique({ where: { staffId } })
-        );
-        break;
-      case 'govt_tax':
-      case 'super_choice_form':
-        // These are always stored in StaffFormSubmission table
-        const formSubmission = await (prisma as any).staffFormSubmission.findFirst({
-          where: {
-            staffId,
-            formKey: normalizedFormType,
-            isSubmitted: true
-          }
-        });
-        if (formSubmission) {
-          formData = formSubmission.data;
-        }
-        break;
-      default:
-        return new NextResponse("Invalid form type", { status: 400 });
+    const formKey = formKeyMap[formType] || formType;
+    console.log(`[API] Mapped formType '${formType}' to formKey '${formKey}'`);
+
+    let formData = null;
+
+    // Try specialized tables first
+    try {
+      switch (formKey) {
+        case 'employeeDetails':
+          formData = await (prisma as any).staffEmploymentDetails.findUnique({ where: { staffId } });
+          break;
+        case 'employee_welcome':
+          formData = await (prisma as any).staffEmploymentWelcomeAck.findUnique({ where: { staffId } });
+          break;
+        case 'support_worker':
+          formData = await (prisma as any).staffSupportWorker.findUnique({ where: { staffId } });
+          break;
+        case 'pre_employment_medical':
+          formData = await (prisma as any).staffPreEmploymentMedical.findUnique({ where: { staffId } });
+          break;
+        case 'ndis_workforce_capability':
+          formData = await (prisma as any).staffNdisWorkforceCapability.findUnique({ where: { staffId } });
+          break;
+        case 'bullying_harassment_training':
+          formData = await (prisma as any).staffBullyingHarassmentTraining.findUnique({ where: { staffId } });
+          break;
+        case 'bullying_training':
+          formData = await (prisma as any).staffBullyingTraining.findUnique({ where: { staffId } });
+          break;
+        case 'ndis_code_of_conduct':
+          formData = await (prisma as any).staffNdisCodeOfConduct.findUnique({ where: { staffId } });
+          break;
+        case 'conflict_of_interest':
+          formData = await (prisma as any).staffConflictOfInterest.findUnique({ where: { staffId } });
+          break;
+        case 'documentation_acknowledgement':
+          formData = await (prisma as any).staffDocumentationAcknowledgement.findUnique({ where: { staffId } });
+          break;
+        case 'vehicle_safety_inspection':
+          formData = await (prisma as any).staffVehicleSafetyInspection.findUnique({ where: { staffId } });
+          break;
+      }
+    } catch (error: any) {
+      console.log(`[API] Specialized table query failed: ${error.message}`);
     }
 
-    // If no data found in dedicated table, check generic submissions
+    // If no specialized table, check generic submissions
     if (!formData) {
-      console.log(`No data found in dedicated table for ${normalizedFormType}, checking generic submissions`);
+      console.log(`[API] No specialized table data, checking generic submissions for ${formKey}`);
       const genericSubmission = await (prisma as any).staffFormSubmission.findFirst({
-        where: {
-          staffId,
-          formKey: normalizedFormType,
-          isSubmitted: true
-        },
+        where: { staffId, formKey, isSubmitted: true },
         orderBy: { updatedAt: 'desc' }
       });
-      
       if (genericSubmission) {
-        formData = genericSubmission.data;
-        console.log(`Found data in generic submissions for ${normalizedFormType}`);
+        formData = { data: genericSubmission.data };
+        console.log(`[API] Found generic submission`);
       }
     }
 
     if (!formData) {
+      console.log(`[API] No form data found for ${formKey}`);
       return new NextResponse("Form data not found", { status: 404 });
     }
 
-    // Debug logging
-    console.log(`[API] Form data for ${normalizedFormType}:`, {
-      hasData: !!formData.data,
-      dataKeys: formData.data ? Object.keys(formData.data) : 'no data property',
-      formDataKeys: Object.keys(formData)
-    });
+    console.log(`[API] Raw formData keys:`, Object.keys(formData));
 
-    // Add staff info to form data
-    // Match the structure that works in the onboarding API
-    const formDataContent = formData.data || formData;
-    const dataWithStaff = { 
-      ...formData, 
+    // Extract actual form fields
+    const actualFormFields = formData.data || {};
+    
+    // Add signature fields if they exist
+    if (formData.staffSignature) {
+      actualFormFields.employeeSignature = formData.staffSignature;
+      actualFormFields.signature = formData.staffSignature;
+      actualFormFields.staffSignature = formData.staffSignature;
+      actualFormFields.employeeSignatureDate = formData.staffSignedAt?.toISOString().split('T')[0] || '';
+      actualFormFields.signatureDate = formData.staffSignedAt?.toISOString().split('T')[0] || '';
+      actualFormFields.date = formData.staffSignedAt?.toISOString().split('T')[0] || '';
+    }
+
+    // Create response in expected format
+    const response = {
       staff,
-      // Spread the actual form data directly (like onboarding API does)
-      ...formDataContent,
-      // Add signature fields if they exist
-      ...(formData.staffSignature && { signature: formData.staffSignature }),
-      ...(formData.staffSignedAt && { signatureDate: formData.staffSignedAt?.toISOString().split('T')[0] }),
-      // Also provide data.data for components that expect it
-      data: formDataContent
+      submissions: {
+        [formKey]: actualFormFields
+      }
     };
 
-    console.log(`[API] Final response for ${normalizedFormType}:`, {
-      hasData: !!dataWithStaff.data,
-      dataKeys: dataWithStaff.data ? Object.keys(dataWithStaff.data) : 'no data property',
-      directKeys: Object.keys(dataWithStaff).filter(key => !['staff', 'data', 'id', 'staffId', 'createdAt', 'updatedAt'].includes(key))
+    console.log(`[API] Final response structure:`, {
+      hasStaff: !!response.staff,
+      hasSubmissions: !!response.submissions,
+      submissionKeys: Object.keys(response.submissions),
+      formDataKeys: Object.keys(response.submissions[formKey] || {})
     });
 
-    return NextResponse.json(dataWithStaff);
+    return NextResponse.json(response);
+
   } catch (error: any) {
-    console.error("Error fetching form data:", error);
+    console.error("[API] Error:", error);
     return new NextResponse(`Error: ${error.message}`, { status: 500 });
   }
 }

@@ -65,8 +65,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       select: { formKey: true, isSubmitted: true, updatedAt: true }
     });
 
-    const getGeneric = (key: string) => genericSubs.find((g: any) => g.formKey === key && g.isSubmitted);
-    if (isDev) console.log('[staff/forms] generic submitted keys:', genericSubs.filter((g:any)=>g.isSubmitted).map((g:any)=>g.formKey));
+    const getGeneric = (key: string) => {
+      const found = genericSubs.find((g: any) => g.formKey === key);
+      // Return the form if it exists (regardless of isSubmitted status)
+      return found;
+    };
+    
+    console.log('📊 Generic Forms Check:', {
+      staffId,
+      genericKeys,
+      foundGenericForms: genericSubs.map(g => ({ key: g.formKey, isSubmitted: g.isSubmitted })),
+      submittedGenericForms: genericSubs.filter((g:any)=>g.isSubmitted).map((g:any)=>g.formKey)
+    });
 
     const forms = [
       {
@@ -184,7 +194,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     ];
 
     const completedCount = forms.filter(f => f.status === 'completed').length;
-    if (isDev) console.log(`[staff/forms] staffId=${staffId} completed=${completedCount}/${forms.length}`);
+    
+    // Enhanced debugging for form completion
+    console.log('📊 Staff Forms API - Completion Summary:', {
+      staffId,
+      totalForms: forms.length,
+      completedCount,
+      completedForms: forms.filter(f => f.status === 'completed').map(f => f.formName),
+      pendingForms: forms.filter(f => f.status === 'pending').map(f => f.formName),
+      staffStatus: staff.status,
+      hasSignature: forms.filter(f => f.hasSignature).length
+    });
+    
     return NextResponse.json({ staff, forms, completedCount });
   } catch (error: any) {
     console.error('Error fetching staff forms:', error);

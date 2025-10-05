@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
 import { FaSyncAlt, FaLink, FaCheckCircle, FaRegCircle } from 'react-icons/fa';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import EnhancedFormsSection from './forms/EnhancedFormsSection';
 
 export default function StaffFormsPage() {
   const { id } = useParams<{ id: string }>();
@@ -243,60 +244,20 @@ export default function StaffFormsPage() {
                 <div className="font-semibold text-slate-800">{staff.updatedAt ? new Date(staff.updatedAt).toLocaleDateString() : '—'}</div>
               </div>
               <div className="bg-amber-50 rounded-xl p-4">
-                <div className="text-slate-500">Onboarding Link</div>
-                <div className="font-semibold text-slate-800">{staff.status === 'success' ? 'Completed' : 'Pending'}</div>
+                <div className="text-slate-500">Onboarding Status</div>
+                <div className="font-semibold text-slate-800">
+                  {staff.status === 'success' ? 'Completed' : 
+                   completedCount > 0 ? `${completedCount}/${TOTAL_FORMS} Forms Completed` : 
+                   'Not Started'}
+                </div>
               </div>
                 </div>
             </div>
         </div>
 
-        {/* Forms card: show only statuses until all completed; then show view links */}
+        {/* Enhanced Forms Section - Shows status and expandable data */}
         <div className="mt-6">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="px-5 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-600 text-white font-bold">🗂️</span>
-                <h3 className="font-semibold text-slate-800">Forms</h3>
-              </div>
-            </div>
-            <div className="p-5">
-              {formsLoading ? (
-                <LoadingSpinner 
-                  title="Loading Forms" 
-                  message="Please wait while we load the staff forms..."
-                />
-              ) : forms.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-gray-500">No forms available yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Forms will appear here once the staff member starts filling them out</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {(forms.every((f: any) => f.status === 'completed') ? forms : forms).map((form: any) => (
-                    <div key={form.formType} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-3 h-3 rounded-full ${form.status === 'completed' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    <div>
-                          <div className="font-medium">{form.formName}</div>
-                          <div className="text-xs text-gray-500">{form.status === 'completed' ? `Completed ${form.completedAt || ''}` : 'Not completed'}</div>
-                    </div>
-                  </div>
-                      {forms.every((f: any) => f.status === 'completed') && form.status === 'completed' ? (
-                        <Link href={`/admin/staff/${id}/forms/${form.formType}`} className="px-3 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600">View</Link>
-                      ) : (
-                        <span className="text-xs text-gray-400">Status: {form.status}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+          <EnhancedFormsSection staffId={id} />
         </div>
       </div>
 
