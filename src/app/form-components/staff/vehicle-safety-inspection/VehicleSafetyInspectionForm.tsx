@@ -195,7 +195,7 @@ export default function VehicleSafetyInspectionForm({
             checked={checked === "yes"}
             onChange={() => onChange("yes")}
             disabled={disabled || readOnly}
-            className="w-4 h-4 mr-1"
+            className="w-4 h-4 mr-1 accent-sky-500"
           />
           Yes
         </label>
@@ -208,7 +208,7 @@ export default function VehicleSafetyInspectionForm({
             checked={checked === "no"}
             onChange={() => onChange("no")}
             disabled={disabled || readOnly}
-            className="w-4 h-4 mr-1"
+            className="w-4 h-4 mr-1 accent-sky-500"
           />
           No
         </label>

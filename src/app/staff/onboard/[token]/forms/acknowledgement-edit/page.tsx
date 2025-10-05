@@ -154,7 +154,7 @@ export default function AcknowledgementEditPage() {
 
         {/* A4-styled FormPage */}
         <div className="bg-transparent">
-          <FormPage title="Documentation Acknowledgement">
+          <FormPage title="Documentation Acknowledgement" showTitle={true}>
             <div className="mb-6">
             <p className="text-gray-700 text-base mb-2">I confirm I have received copies of the following documents from Infinity Supports WA.</p>
             <ul className="list-disc list-outside text-gray-700 mb-2 pl-6">

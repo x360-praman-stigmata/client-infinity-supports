@@ -36,7 +36,7 @@ export default function FormPage({ children, title, showTitle = true, meta }: Fo
           <img src="/infinity_logo.png" alt="Infinity Support WA" className="h-16 w-auto" />
         </div>
         {showTitle && title && (
-          <h2 className="text-4xl font-bold text-gray-900">{title}</h2>
+          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
         )}
       </div>
 

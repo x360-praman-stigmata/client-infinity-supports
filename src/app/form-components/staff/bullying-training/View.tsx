@@ -32,7 +32,7 @@ export default function BullyingTrainingView({
 
   return (
     <div className={adminView ? "" : "bg-gray-100 py-8"}>
-      <FormPage title="Bullying Training Acknowledgment" meta={meta} showTitle={!adminView}>
+      <FormPage title="Bullying Training Acknowledgment" meta={meta} showTitle={true}>
         <div className="space-y-6 text-sm w-full">
           <div className="w-full">
             <div className="p-8 w-full bg-white">
