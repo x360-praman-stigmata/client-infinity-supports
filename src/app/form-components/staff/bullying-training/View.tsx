@@ -1,129 +1,160 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
+import FormPage from '@/components/ui/FormPage';
 
-export default function BullyingTrainingView({ excludeLastPage = false, children, data = {} }: { excludeLastPage?: boolean; children?: React.ReactNode; data?: any }) {
-  const pdfContainerRef = useRef<HTMLDivElement>(null);
-  const hasRenderedRef = useRef(false);
-  const [isRendering, setIsRendering] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface BullyingTrainingViewProps {
+  data?: any;
+  adminView?: boolean;
+  readOnly?: boolean;
+}
 
-  useEffect(() => {
-    // Render the PDF into canvases without the built-in viewer
-    const renderPdf = async () => {
-      if (hasRenderedRef.current) return;
-      hasRenderedRef.current = true;
-      setIsRendering(true);
-      try {
-        console.log('Starting PDF rendering for Bullying Training');
-        console.log('Injecting PDF.js scripts...');
-        await injectScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
-        await injectScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');
-        const w: any = window as any;
-        console.log('Checking for pdfjsLib...');
-        if (!w['pdfjsLib']) throw new Error('pdfjsLib not available');
-        console.log('pdfjsLib found, setting worker source...');
-        w['pdfjsLib'].GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+export default function BullyingTrainingView({ 
+  data = {},
+  adminView = false,
+  readOnly = true
+}: BullyingTrainingViewProps) {
+  
+  const getValue = (fieldName: string) => {
+    return data[fieldName] || data.data?.[fieldName] || '';
+  };
 
-        const url = '/stafForms/Bullying Training.pdf';
-        console.log('Loading PDF from:', url);
-        const loadingTask = w['pdfjsLib'].getDocument(url);
-        const pdf = await loadingTask.promise;
-        console.log('PDF loaded successfully, pages:', pdf.numPages);
-
-        const container = pdfContainerRef.current;
-        console.log('Container ref:', container);
-        if (!container) {
-          console.error('Container not available');
-          return;
-        }
-        container.innerHTML = '';
-        console.log('Container cleared, starting PDF rendering...');
-
-        const containerWidth = container.clientWidth || 794;
-        const devicePixelRatioValue = Math.max(window.devicePixelRatio || 1, 1);
-        const displayWidth = Math.min(containerWidth, 794);
-        const qualityMultiplier = 2; // render sharper, then downscale for crispness
-
-        const fragment = document.createDocumentFragment();
-
-        const lastPage = excludeLastPage ? (pdf.numPages - 1) : pdf.numPages;
-        for (let pageIndex = 1; pageIndex <= lastPage; pageIndex++) {
-          const page = await pdf.getPage(pageIndex);
-          const viewport = page.getViewport({ scale: 1 });
-          const scale = displayWidth / viewport.width;
-          const displayViewport = page.getViewport({ scale });
-
-          const pageWrapper = document.createElement('div');
-          pageWrapper.className = 'bg-white mx-auto border shadow p-0 print:p-0 mb-4';
-          pageWrapper.style.width = displayWidth + 'px';
-
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          if (!context) continue;
-
-          canvas.width = Math.floor(displayViewport.width * devicePixelRatioValue * qualityMultiplier);
-          canvas.height = Math.floor(displayViewport.height * devicePixelRatioValue * qualityMultiplier);
-          canvas.style.width = displayViewport.width + 'px';
-          canvas.style.height = displayViewport.height + 'px';
-          canvas.style.display = 'block';
-
-          context.scale(devicePixelRatioValue * qualityMultiplier, devicePixelRatioValue * qualityMultiplier);
-          await page.render({ canvasContext: context, viewport: displayViewport }).promise;
-
-          pageWrapper.appendChild(canvas);
-          fragment.appendChild(pageWrapper);
-        }
-
-        // Append all pages at once to avoid progressive layout shifts/scroll jumps
-        container.appendChild(fragment);
-      } catch (e: any) {
-        console.error('Error rendering PDF:', e);
-        setError(e?.message || 'Failed to render PDF');
-      } finally {
-        setIsRendering(false);
-      }
-    };
-
-    renderPdf();
-  }, []);
-
-  function injectScript(src: string) {
-    return new Promise<void>((resolve, reject) => {
-      const existing = document.querySelector(`script[src="${src}"]`);
-      if (existing) return resolve();
-      const s = document.createElement('script');
-      s.src = src;
-      s.async = true;
-      s.onload = () => resolve();
-      s.onerror = () => reject(new Error('Failed to load ' + src));
-      document.body.appendChild(s);
-    });
-  }
+  const meta = {
+    website: 'infinitysupportswa.org',
+    formId: 'SF015',
+    reviewDate: '01/03/2025'
+  };
 
   return (
-    <div className="bg-slate-50 py-8">
-      <div className="bg-white w-full max-w-[900px] mx-auto rounded-xl shadow border p-4">
-        {isRendering && (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading Bullying Training...</p>
+    <div className="bg-gray-100 py-8">
+      <FormPage title="Bullying Training Acknowledgment" meta={meta}>
+        <div className="space-y-6 text-sm w-full">
+          <div className="w-full">
+            <div className="border border-gray-300 rounded-lg p-6 w-full">
+              
+              {/* Training Acknowledgment Text */}
+              <div className="mb-6">
+                <div className="bg-blue-600 text-white px-6 py-3 rounded-t-lg">
+                  <h3 className="text-xl font-semibold">Training Acknowledgment</h3>
+                </div>
+                <div className="border border-gray-300 rounded-b-lg p-4 w-full mt-3">
+                  <div className="text-center space-y-4">
+                    <p className="text-gray-900 leading-relaxed">
+                      I acknowledge that I completed <strong className="text-red-600">Bullying training</strong> conducted by Infinity Supports WA.
+                    </p>
+                    <p className="text-gray-900 leading-relaxed">
+                      I also acknowledge that I have received training/study materials for the above-mentioned training.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Staff Information */}
+              <div className="mb-6">
+                <div className="bg-blue-600 text-white px-6 py-3 rounded-t-lg">
+                  <h3 className="text-xl font-semibold">Staff Information</h3>
+                </div>
+                <div className="border border-gray-300 rounded-b-lg p-4 w-full mt-3">
+                  <div className="space-y-6">
+                    
+                    {/* Staff Name */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <label className="font-medium text-gray-700 w-32 shrink-0">Staff Name:</label>
+                      <div className="flex-1 border-b-2 border-gray-300 bg-gray-50 p-2 rounded">
+                        <span className="text-gray-900">
+                          {getValue('staffName') || 
+                           (data?.staff?.firstName && data?.staff?.surname ? 
+                            `${data.staff.firstName} ${data.staff.surname}` : 
+                            'Not provided')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Staff Signature */}
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                      <label className="font-medium text-gray-700 w-32 shrink-0 sm:mt-2">Staff Signature:</label>
+                      <div className="flex-1">
+                        <div className="border-2 border-gray-300 bg-gray-50 p-4 rounded min-h-[80px] flex items-center justify-center">
+                          {data.staffSignature ? (
+                            <img 
+                              src={data.staffSignature} 
+                              alt="Staff Signature" 
+                              className="max-h-16 max-w-full object-contain"
+                            />
+                          ) : (
+                            <span className="text-gray-400 italic">No signature provided</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Date */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <label className="font-medium text-gray-700 w-32 shrink-0">Date:</label>
+                      <div className="flex-1 border-b-2 border-gray-300 bg-gray-50 p-2 rounded">
+                        <span className="text-gray-900">
+                          {getValue('date') || data.staffSignedAt ? 
+                            new Date(getValue('date') || data.staffSignedAt).toLocaleDateString() : 
+                            'Not provided'}
+                        </span>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              {/* Manager Information */}
+              <div>
+                <div className="bg-blue-600 text-white px-6 py-3 rounded-t-lg">
+                  <h3 className="text-xl font-semibold">Manager Information</h3>
+                </div>
+                <div className="border border-gray-300 rounded-b-lg p-4 w-full mt-3">
+                  <div className="space-y-6">
+                    
+                    {/* Manager Name */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <label className="font-medium text-gray-700 w-32 shrink-0">Manager's Name:</label>
+                      <div className="flex-1 border-b-2 border-gray-300 bg-gray-50 p-2 rounded">
+                        <span className="text-gray-900">
+                          {getValue('managerName') || 'Not provided'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Manager Signature */}
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                      <label className="font-medium text-gray-700 w-32 shrink-0 sm:mt-2">Manager's Signature:</label>
+                      <div className="flex-1">
+                        <div className="border-2 border-gray-300 bg-gray-50 p-4 rounded min-h-[80px] flex items-center justify-center">
+                          {getValue('managerSignature') ? (
+                            <img 
+                              src={getValue('managerSignature')} 
+                              alt="Manager Signature" 
+                              className="max-h-16 max-w-full object-contain"
+                            />
+                          ) : (
+                            <span className="text-gray-400 italic">No signature provided</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Note */}
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-500 italic">
+                  This acknowledgment confirms completion of the Bullying Training program.
+                </p>
+              </div>
+
+            </div>
           </div>
-        )}
-        <div ref={pdfContainerRef} className="w-full" />
-        {children}
-        {error && (
-          <div className="text-sm text-red-600 mt-2">
-            <p>Error: {error}</p>
-            <p className="mt-2">Attempting to show PDF directly:</p>
-            <iframe 
-              src="/stafForms/Bullying Training.pdf" 
-              className="w-full h-96 border border-gray-300"
-              title="Bullying Training PDF"
-            />
-          </div>
-        )}
-      </div>
+        </div>
+      </FormPage>
     </div>
   );
 }
