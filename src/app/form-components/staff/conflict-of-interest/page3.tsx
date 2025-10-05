@@ -34,7 +34,6 @@ export default function ConflictFormPage3({ formData, readOnly = false, onDataCh
           src="/infinity_logo.png"
           alt="Infinity Supports WA logo with stylized infinity symbol in muted red above text"
           className="w-[250px] sm:w-[350px] h-[120px] sm:h-[160px] object-contain"
-          className="w-[350px] h-[160px] object-contain"
           width={350}
           height={160}
         />
@@ -169,10 +168,8 @@ export default function ConflictFormPage3({ formData, readOnly = false, onDataCh
       <p className="mb-2">Action Taken (if applicable):</p>
       <div className="mb-6">
         {readOnly ? (
-          <div className="space-y-2">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="border-b border-gray-400 h-6"></div>
-            ))}
+          <div className="border border-gray-400 p-3 bg-gray-50 whitespace-pre-wrap break-words overflow-auto max-h-[500px]">
+            {formData.actionTaken || "No action taken"}
           </div>
         ) : (
           <textarea

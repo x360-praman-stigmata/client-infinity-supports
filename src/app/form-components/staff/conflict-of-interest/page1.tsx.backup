@@ -192,8 +192,10 @@ export default function ConflictFormPage1({ formData, readOnly = false, onDataCh
           </p>
           <div className="mb-6">
             {readOnly ? (
-              <div className="border border-gray-400 p-3 bg-gray-50 whitespace-pre-wrap break-words overflow-auto max-h-[500px]">
-                {formData.conflictDescription || "No description provided"}
+              <div className="space-y-2">
+                {Array.from({ length: 7 }).map((_, index) => (
+                  <div key={index} className="border-b border-gray-400 h-6"></div>
+                ))}
               </div>
             ) : (
               <textarea

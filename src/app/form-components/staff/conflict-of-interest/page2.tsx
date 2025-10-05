@@ -101,10 +101,8 @@ export default function ConflictFormPage2({ formData, readOnly = false, onDataCh
       </p>
       <div className="mb-6">
         {readOnly ? (
-          <div className="space-y-2">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="border-b border-gray-400 h-6"></div>
-            ))}
+          <div className="border border-gray-400 p-3 bg-gray-50 whitespace-pre-wrap break-words overflow-auto max-h-[500px]">
+            {formData.vendorDetails || "No vendor relationships described"}
           </div>
         ) : (
           <textarea
@@ -195,10 +193,8 @@ export default function ConflictFormPage2({ formData, readOnly = false, onDataCh
           </p>
       <div className="mb-6">
         {readOnly ? (
-          <div className="space-y-2">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="border-b border-gray-400 h-6"></div>
-            ))}
+          <div className="border border-gray-400 p-3 bg-gray-50 whitespace-pre-wrap break-words overflow-auto max-h-[500px]">
+            {formData.employmentDetails || "No outside employment described"}
           </div>
         ) : (
           <textarea
