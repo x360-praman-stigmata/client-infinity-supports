@@ -92,7 +92,7 @@ export default function StaffFormViewClient({ formKey }: { formKey: string }) {
           </div>
           <div className="p-8">
             <div className="p-8 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50">
-              <Component meta={meta} />
+              <Component meta={meta} adminView={true} readOnly={true} />
             </div>
           </div>
         </div>
