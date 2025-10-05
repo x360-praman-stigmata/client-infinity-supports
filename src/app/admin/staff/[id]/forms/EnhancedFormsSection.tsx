@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { getStaffFormConfig } from '@/app/forms/staff-registry';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
@@ -46,79 +46,93 @@ const keyMapping: Record<string, string> = {
   'conflict_of_interest': 'conflict_of_interest'
 };
 
-export default function EnhancedFormsSection({ staffId }: EnhancedFormsSectionProps) {
-  const [formData, setFormData] = useState<any>({});
+function EnhancedFormsSection({ staffId }: EnhancedFormsSectionProps) {
+  // Optimized: Only store form summaries initially (just if they exist)
+  const [formSummaries, setFormSummaries] = useState<Record<string, any>>({});
+  const [formDataCache, setFormDataCache] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [expandedForm, setExpandedForm] = useState<string | null>(null);
+  const [loadingForm, setLoadingForm] = useState<string | null>(null);
 
+  // Initial load - just get form summaries (fast)
   useEffect(() => {
-    const loadFormData = async () => {
+    const loadFormSummaries = async () => {
       try {
-        const res = await fetch(`/api/staff/onboard/admin-view-${staffId}`);
+        const res = await fetch(`/api/staff/onboard/admin-view-${staffId}?summary=true`);
         const data = await res.json();
         
         if (res.ok) {
-          setFormData(data.submissions);
-          
-          // Debug form availability
-          const completedForms = FORM_SEQUENCE.filter(form => {
-            const apiKey = keyMapping[form.key] || form.key;
-            return !!(data.submissions && data.submissions[apiKey]);
-          });
-          
-          console.log('📊 EnhancedFormsSection - Form status check:', {
-            staffId,
-            totalForms: FORM_SEQUENCE.length,
-            completedForms: completedForms.length,
-            completedFormNames: completedForms.map(f => f.name),
-            missingForms: FORM_SEQUENCE.filter(form => {
-              const apiKey = keyMapping[form.key] || form.key;
-              return !(data.submissions && data.submissions[apiKey]);
-            }).map(f => f.name),
-            availableKeys: Object.keys(data.submissions || {})
-          });
+          setFormSummaries(data.submissions || {});
         }
       } catch (error) {
-        console.error('Error loading form data:', error);
+        console.error('Error loading form summaries:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadFormData();
+    loadFormSummaries();
   }, [staffId]);
 
-  const renderFormData = (formKey: string) => {
+  // Lazy load individual form data when expanded
+  const loadFormData = useCallback(async (formKey: string) => {
+    const apiKey = keyMapping[formKey] || formKey;
+    
+    // Check if already cached
+    if (formDataCache[apiKey]) {
+      return;
+    }
+    
+    setLoadingForm(formKey);
+    try {
+      const res = await fetch(`/api/staff/${staffId}/forms/${apiKey}`);
+      const data = await res.json();
+      
+      if (res.ok && data.formData) {
+        setFormDataCache(prev => ({
+          ...prev,
+          [apiKey]: data.formData
+        }));
+      }
+    } catch (error) {
+      console.error(`Error loading form ${formKey}:`, error);
+    } finally {
+      setLoadingForm(null);
+    }
+  }, [staffId, formDataCache]);
+
+  // Handle form expansion with lazy loading
+  const handleFormToggle = useCallback((formKey: string) => {
+    if (expandedForm === formKey) {
+      setExpandedForm(null);
+    } else {
+      setExpandedForm(formKey);
+      // Load data if not already loaded
+      loadFormData(formKey);
+    }
+  }, [expandedForm, loadFormData]);
+
+  const renderFormData = useCallback((formKey: string) => {
     const formConfig = getStaffFormConfig(formKey);
     const apiKey = keyMapping[formKey] || formKey;
-    const currentFormData = formData[apiKey];
+    const currentFormData = formDataCache[apiKey];
 
-    if (!currentFormData) return null;
-    
-    // Debug Pre-Employment Medical data structure
-    if (formKey === 'pre_employment_medical') {
-      console.log('🔍 EnhancedFormsSection - Pre-Employment Medical Data:', {
-        formKey,
-        apiKey,
-        hasData: !!currentFormData,
-        dataKeys: Object.keys(currentFormData),
-        hasDataData: !!currentFormData.data,
-        dataDataKeys: currentFormData.data ? Object.keys(currentFormData.data) : [],
-        signatureFields: {
-          staffSignature: !!currentFormData.staffSignature,
-          signature: !!currentFormData.signature,
-          disclosureSignature: !!currentFormData.disclosureSignature,
-          declarationSignature: !!currentFormData.declarationSignature,
-          staffSignedAt: !!currentFormData.staffSignedAt,
-          signatureDate: !!currentFormData.signatureDate,
-          disclosureDate: !!currentFormData.disclosureDate,
-          declarationDate: !!currentFormData.declarationDate
-        }
-      });
+    if (!currentFormData) {
+      if (loadingForm === formKey) {
+        return (
+          <div className="mt-4 p-8 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="w-6 h-6 border-3 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
+              <span className="text-gray-600">Loading form data...</span>
+            </div>
+          </div>
+        );
+      }
+      return null;
     }
 
     // Helper function to find any signature in the data
-    const findSignature = () => {
+    const findSignature = (): string | null => {
       // Check root level signature fields
       if (currentFormData.staffSignature) return currentFormData.staffSignature;
       if (currentFormData.signature) return currentFormData.signature;
@@ -260,7 +274,7 @@ export default function EnhancedFormsSection({ staffId }: EnhancedFormsSectionPr
         </div>
       </div>
     );
-  };
+  }, [formDataCache, loadingForm]);
 
   if (loading) {
     return <LoadingSpinner title="Loading Forms" message="Please wait while we load the staff forms..." />;
@@ -289,7 +303,7 @@ export default function EnhancedFormsSection({ staffId }: EnhancedFormsSectionPr
           <div className="space-y-2">
             {FORM_SEQUENCE.map((form) => {
               const apiKey = keyMapping[form.key] || form.key;
-              const hasData = !!formData[apiKey];
+              const hasData = !!formSummaries[apiKey];
               const isExpanded = expandedForm === form.key;
               
               return (
@@ -303,8 +317,8 @@ export default function EnhancedFormsSection({ staffId }: EnhancedFormsSectionPr
                           {hasData ? (
                             <>
                               <span className="text-green-600 font-medium">✓ Completed</span>
-                              {formData[apiKey]?.staffSignedAt && (
-                                <span> • Signed {new Date(formData[apiKey].staffSignedAt).toLocaleDateString()}</span>
+                              {formSummaries[apiKey]?.staffSignedAt && (
+                                <span> • Signed {new Date(formSummaries[apiKey].staffSignedAt).toLocaleDateString()}</span>
                               )}
                             </>
                           ) : (
@@ -316,7 +330,7 @@ export default function EnhancedFormsSection({ staffId }: EnhancedFormsSectionPr
                     
                     {hasData && (
                       <button
-                        onClick={() => setExpandedForm(isExpanded ? null : form.key)}
+                        onClick={() => handleFormToggle(form.key)}
                         className="px-3 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                       >
                         {isExpanded ? 'Hide' : 'View'}
@@ -334,3 +348,6 @@ export default function EnhancedFormsSection({ staffId }: EnhancedFormsSectionPr
     </div>
   );
 }
+
+// Export memoized version for better performance
+export default memo(EnhancedFormsSection);

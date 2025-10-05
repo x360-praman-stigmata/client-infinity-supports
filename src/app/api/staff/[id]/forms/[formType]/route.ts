@@ -9,8 +9,6 @@ export async function GET(
     const { id, formType } = await params;
     const staffId = parseInt(id);
 
-    console.log(`[API] Request: staffId=${staffId}, formType=${formType}`);
-
     if (!staffId || !formType) {
       return new NextResponse("Missing staffId or formType", { status: 400 });
     }
@@ -46,7 +44,6 @@ export async function GET(
     };
 
     const formKey = formKeyMap[formType] || formType;
-    console.log(`[API] Mapped formType '${formType}' to formKey '${formKey}'`);
 
     let formData = null;
 
@@ -88,28 +85,23 @@ export async function GET(
           break;
       }
     } catch (error: any) {
-      console.log(`[API] Specialized table query failed: ${error.message}`);
+      // Silently handle specialized table query failures
     }
 
     // If no specialized table, check generic submissions
     if (!formData) {
-      console.log(`[API] No specialized table data, checking generic submissions for ${formKey}`);
       const genericSubmission = await (prisma as any).staffFormSubmission.findFirst({
         where: { staffId, formKey, isSubmitted: true },
         orderBy: { updatedAt: 'desc' }
       });
       if (genericSubmission) {
         formData = { data: genericSubmission.data };
-        console.log(`[API] Found generic submission`);
       }
     }
 
     if (!formData) {
-      console.log(`[API] No form data found for ${formKey}`);
       return new NextResponse("Form data not found", { status: 404 });
     }
-
-    console.log(`[API] Raw formData keys:`, Object.keys(formData));
 
     // Extract actual form fields
     const actualFormFields = formData.data || {};
@@ -124,22 +116,14 @@ export async function GET(
       actualFormFields.date = formData.staffSignedAt?.toISOString().split('T')[0] || '';
     }
 
-    // Create response in expected format
-    const response = {
-      staff,
-      submissions: {
-        [formKey]: actualFormFields
+    // Return optimized response with full form data for lazy loading
+    return NextResponse.json({
+      formData: {
+        ...actualFormFields,
+        ...formData, // Include metadata like createdAt, updatedAt
+        data: actualFormFields // Preserve nested structure if needed
       }
-    };
-
-    console.log(`[API] Final response structure:`, {
-      hasStaff: !!response.staff,
-      hasSubmissions: !!response.submissions,
-      submissionKeys: Object.keys(response.submissions),
-      formDataKeys: Object.keys(response.submissions[formKey] || {})
     });
-
-    return NextResponse.json(response);
 
   } catch (error: any) {
     console.error("[API] Error:", error);

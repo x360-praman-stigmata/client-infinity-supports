@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
+import PDFFormAdminView from '@/components/ui/PDFFormAdminView';
 
 interface NdisWorkforceCapabilityViewProps {
   excludeLastPage?: boolean;
@@ -17,6 +18,7 @@ interface NdisWorkforceCapabilityViewProps {
     placeholder?: string;
     required?: boolean;
   }>;
+  adminView?: boolean;
 }
 
 export default function NdisWorkforceCapabilityView({ 
@@ -26,53 +28,55 @@ export default function NdisWorkforceCapabilityView({
   onDataChange,
   readOnly = false,
   showOverlay = false,
-  overlayFields = {}
+  overlayFields = {},
+  adminView = false
 }: NdisWorkforceCapabilityViewProps) {
   const pdfContainerRef = useRef<HTMLDivElement>(null);
   const hasRenderedRef = useRef(false);
   const [isRendering, setIsRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fast admin view - no PDF rendering
+  if (adminView) {
+    return (
+      <PDFFormAdminView
+        title="NDIS Workforce Capability Framework"
+        description="PDF Document - Read & Submit Form"
+        pdfUrl="/stafForms/NDIS WORKFORCE CAPABILITY FRAMEWORK.pdf"
+        data={data}
+        formType="NDIS Capability Framework"
+      />
+    );
+  }
+
   useEffect(() => {
-    // Render the PDF into canvases without the built-in viewer
     const renderPdf = async () => {
       if (hasRenderedRef.current) return;
       hasRenderedRef.current = true;
       setIsRendering(true);
       try {
-        console.log('Starting PDF rendering for NDIS Workforce Capability Framework');
-        console.log('Injecting PDF.js scripts...');
         await injectScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
         await injectScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');
         const w: any = window as any;
-        console.log('Checking for pdfjsLib...');
         if (!w['pdfjsLib']) throw new Error('pdfjsLib not available');
-        console.log('pdfjsLib found, setting worker source...');
         w['pdfjsLib'].GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         const url = '/stafForms/NDIS WORKFORCE CAPABILITY FRAMEWORK.pdf';
-        console.log('Loading PDF from:', url);
         const loadingTask = w['pdfjsLib'].getDocument(url);
         const pdf = await loadingTask.promise;
-        console.log('PDF loaded successfully, pages:', pdf.numPages);
 
         const container = pdfContainerRef.current;
-        console.log('Container ref:', container);
-        if (!container) {
-          console.error('Container not available');
-          return;
-        }
+        if (!container) return;
         container.innerHTML = '';
-        console.log('Container cleared, starting PDF rendering...');
 
         const containerWidth = container.clientWidth || 794;
         const devicePixelRatioValue = Math.max(window.devicePixelRatio || 1, 1);
         const displayWidth = Math.min(containerWidth, 794);
-        const qualityMultiplier = 2; // render sharper, then downscale for crispness
+        const qualityMultiplier = 2;
 
         const fragment = document.createDocumentFragment();
-
         const lastPage = excludeLastPage ? (pdf.numPages - 1) : pdf.numPages;
+        
         for (let pageIndex = 1; pageIndex <= lastPage; pageIndex++) {
           const page = await pdf.getPage(pageIndex);
           const viewport = page.getViewport({ scale: 1 });
@@ -100,7 +104,6 @@ export default function NdisWorkforceCapabilityView({
           fragment.appendChild(pageWrapper);
         }
 
-        // Append all pages at once to avoid progressive layout shifts/scroll jumps
         container.appendChild(fragment);
       } catch (e: any) {
         console.error('Error rendering PDF:', e);
@@ -137,19 +140,12 @@ export default function NdisWorkforceCapabilityView({
         )}
         <div ref={pdfContainerRef} className="w-full" />
         
-        {/* Overlay Fields for Editing */}
         {showOverlay && overlayFields && Object.keys(overlayFields).length > 0 && (
           <div className="absolute inset-0 pointer-events-none">
-            {/* Name Field Overlay */}
             {overlayFields.name && (
               <div 
                 className="absolute pointer-events-auto"
-                style={{ 
-                  top: '75%', 
-                  left: '15%', 
-                  width: '35%',
-                  transform: 'translateY(-50%)'
-                }}
+                style={{ top: '75%', left: '15%', width: '35%', transform: 'translateY(-50%)' }}
               >
                 <input
                   type="text"
@@ -162,16 +158,10 @@ export default function NdisWorkforceCapabilityView({
               </div>
             )}
             
-            {/* Signature Field Overlay */}
             {overlayFields.signature && (
               <div 
                 className="absolute pointer-events-auto"
-                style={{ 
-                  top: '85%', 
-                  left: '15%', 
-                  width: '35%',
-                  transform: 'translateY(-50%)'
-                }}
+                style={{ top: '85%', left: '15%', width: '35%', transform: 'translateY(-50%)' }}
               >
                 <input
                   type="text"
@@ -184,16 +174,10 @@ export default function NdisWorkforceCapabilityView({
               </div>
             )}
             
-            {/* Date Field Overlay */}
             {overlayFields.date && (
               <div 
                 className="absolute pointer-events-auto"
-                style={{ 
-                  top: '85%', 
-                  left: '55%', 
-                  width: '25%',
-                  transform: 'translateY(-50%)'
-                }}
+                style={{ top: '85%', left: '55%', width: '25%', transform: 'translateY(-50%)' }}
               >
                 <input
                   type="date"
@@ -207,18 +191,13 @@ export default function NdisWorkforceCapabilityView({
           </div>
         )}
         
-        {children}
         {error && (
-          <div className="text-sm text-red-600 mt-2">
-            <p>Error: {error}</p>
-            <p className="mt-2">Attempting to show PDF directly:</p>
-            <iframe 
-              src="/stafForms/NDIS WORKFORCE CAPABILITY FRAMEWORK.pdf" 
-              className="w-full h-96 border border-gray-300"
-              title="NDIS Workforce Capability Framework PDF"
-            />
+          <div className="text-center py-8">
+            <p className="text-red-600">Error: {error}</p>
           </div>
         )}
+        
+        {children}
       </div>
     </div>
   );
