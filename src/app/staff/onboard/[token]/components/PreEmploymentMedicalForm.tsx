@@ -639,6 +639,7 @@ export default forwardRef<PreEmploymentMedicalFormRef, { token: string; onValidi
                               <th className="border border-gray-400 px-3 py-2 text-left text-sm font-medium text-gray-700">Condition</th>
                               <th className="border border-gray-400 px-3 py-2 text-center text-sm font-medium text-gray-700">Yes</th>
                               <th className="border border-gray-400 px-3 py-2 text-center text-sm font-medium text-gray-700">No</th>
+                              <th className="border border-gray-400 px-3 py-2 text-center text-sm font-medium text-gray-700">Details</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -681,6 +682,17 @@ export default forwardRef<PreEmploymentMedicalFormRef, { token: string; onValidi
                                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                       title={`${condition} - No`}
                                     />
+                                  </td>
+                                  <td className="border border-gray-400 px-3 py-2">
+                                    {data[`${key}Condition`] === true && (
+                                      <textarea
+                                        value={data[`${key}ConditionDetails`] || ''}
+                                        onChange={(e) => handleChange(`${key}ConditionDetails`, e.target.value)}
+                                        rows={2}
+                                        className="w-full border border-gray-400 rounded-sm px-2 py-1 text-gray-900 bg-white text-xs"
+                                        placeholder="Details..."
+                                      />
+                                    )}
                                   </td>
                                 </tr>
                               );

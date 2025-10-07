@@ -393,6 +393,7 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
                             <th className="border border-gray-400 px-3 py-2 text-left text-sm font-medium text-gray-700">Condition</th>
                             <th className="border border-gray-400 px-3 py-2 text-center text-sm font-medium text-gray-700">Yes</th>
                             <th className="border border-gray-400 px-3 py-2 text-center text-sm font-medium text-gray-700">No</th>
+                            <th className="border border-gray-400 px-3 py-2 text-center text-sm font-medium text-gray-700">Details</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -415,6 +416,7 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
                             'Colour blindness'
                           ].map((condition, index) => {
                             const key = condition.toLowerCase().replace(/[^a-z0-9]/g, '') + 'Condition';
+                            const detailsKey = condition.toLowerCase().replace(/[^a-z0-9]/g, '') + 'ConditionDetails';
                             return (
                               <tr key={index}>
                                 <td className="border border-gray-400 px-3 py-2 text-sm text-gray-700">{condition}</td>
@@ -423,6 +425,13 @@ export default function PreEmploymentMedicalView({ data = {}, staffInfo = {} }: 
                                 </td>
                                 <td className="border border-gray-400 px-3 py-2 text-center">
                                   <div className={`w-5 h-5 rounded-full border-2 mx-auto ${getBoolValue(key) === false ? 'bg-green-500 border-green-500' : 'bg-white border-gray-400'}`}></div>
+                                </td>
+                                <td className="border border-gray-400 px-3 py-2">
+                                  {getBoolValue(key) === true && getValue(detailsKey) && (
+                                    <div className="text-sm text-gray-600 italic">
+                                      {getValue(detailsKey)}
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             );
