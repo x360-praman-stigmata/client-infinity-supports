@@ -3,6 +3,7 @@
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from 'react';
 import { fetchFormSpecificSettings } from '@/lib/settings';
 import SignatureCanvas, { SignatureCanvasRef } from '@/components/ui/SignatureCanvas';
+import FormDownloadButton from '@/components/ui/FormDownloadButton';
 
 export interface EmployeeWelcomeAckFormRef { 
   submit: () => Promise<boolean>;
@@ -10,10 +11,11 @@ export interface EmployeeWelcomeAckFormRef {
   validateDetailed: () => { isValid: boolean; missing?: string[]; invalid?: string[] } | null;
 }
 
-const EmployeeWelcomeAckForm = forwardRef<EmployeeWelcomeAckFormRef, { token: string; onValidityChange?: (valid: boolean)=>void; onSubmitted?: ()=>void }>(
-function EmployeeWelcomeAckForm({ token, onValidityChange, onSubmitted }, ref) {
+const EmployeeWelcomeAckForm = forwardRef<EmployeeWelcomeAckFormRef, { token: string; onValidityChange?: (valid: boolean)=>void; onSubmitted?: ()=>void; onChange?: (data: any) => void }>(
+function EmployeeWelcomeAckForm({ token, onValidityChange, onSubmitted, onChange }, ref) {
   const [data, setData] = useState<any>({ readAcknowledgement: false, fullName: '', signature: '', date: '' });
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true); // Loading state for initial data fetch
   const [meta, setMeta] = useState<{ website: string; formId: string; reviewDate: string }>({ website: 'infinitysupportswa.org', formId: 'SF009', reviewDate: new Date().toISOString().slice(0,10) });
   const sigRef = useRef<SignatureCanvasRef | null>(null);
 
@@ -43,24 +45,51 @@ function EmployeeWelcomeAckForm({ token, onValidityChange, onSubmitted }, ref) {
   }, []);
 
   useEffect(() => {
-    // Load saved data if any
+    // Load saved data and staff info
     const loadData = async () => {
       try {
+        setDataLoading(true);
         const response = await fetch(`/api/staff/onboard/${token}`);
         if (response.ok) {
           const result = await response.json();
+          
+          // Pre-fill name from staff data
+          const staffName = result.staff ? `${result.staff.firstName || ''} ${result.staff.surname || ''}`.trim() : '';
+          
+          // Load saved form data if any
           if (result.submissions?.employee_welcome) {
             const savedData = result.submissions.employee_welcome;
-            setData({
+            const initialData = {
               readAcknowledgement: savedData.readAcknowledgement || false,
-              fullName: savedData.fullName || '',
+              fullName: savedData.fullName || staffName, // Use saved name or staff name
               signature: savedData.signature || '',
               date: savedData.date || ''
-            });
+            };
+            setData(initialData);
+            // Notify parent of initial data
+            if (onChange) {
+              onChange(initialData);
+            }
+          } else {
+            // No saved data, pre-fill with staff name
+            const initialData = {
+              readAcknowledgement: false,
+              fullName: staffName,
+              signature: '',
+              date: ''
+            };
+            setData(initialData);
+            // Notify parent of initial data
+            if (onChange) {
+              onChange(initialData);
+            }
           }
         }
       } catch (e) {
-        // ignore prefill errors
+        console.error('Error loading data:', e);
+        // Keep default empty state on error
+      } finally {
+        setDataLoading(false);
       }
     };
     loadData();
@@ -71,6 +100,11 @@ function EmployeeWelcomeAckForm({ token, onValidityChange, onSubmitted }, ref) {
     setData(next);
     const valid = !!next.readAcknowledgement && !!next.fullName && !!next.signature && !!next.date;
     onValidityChange?.(valid);
+    
+    // Notify parent component of data changes
+    if (onChange) {
+      onChange(next);
+    }
   };
 
   const handleSubmit = async () => {
@@ -140,6 +174,22 @@ function EmployeeWelcomeAckForm({ token, onValidityChange, onSubmitted }, ref) {
     validateDetailed
   }), [data]);
 
+  // Show loading state while fetching data
+  if (dataLoading) {
+    return (
+      <div className="w-full flex justify-center">
+        <div className="bg-white w-full max-w-[794px] min-h-[1123px] border shadow relative px-[96px] pt-12 pb-[112px] a4-ack">
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading form data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full flex justify-center">
       <div className="bg-white w-full max-w-[794px] min-h-[1123px] border shadow relative px-[96px] pt-12 pb-[112px] a4-ack">
@@ -149,6 +199,16 @@ function EmployeeWelcomeAckForm({ token, onValidityChange, onSubmitted }, ref) {
         </div>
 
         <h2 className="text-center font-semibold mb-6 text-[12pt]">Employee Handbook Acknowledgement Form</h2>
+
+        {/* Download Button */}
+        <div className="mb-6">
+          <FormDownloadButton
+            pdfUrl="/stafForms/Employee%20Welcome%20Pack.pdf"
+            fileName="Employee Welcome Pack.pdf"
+            formName="Employee Welcome Pack"
+            description="Download the complete document for your records"
+          />
+        </div>
 
         <p className="mb-4">
           I confirm I have received the Employee handbook from Infinity Supports and have read and
@@ -178,7 +238,21 @@ function EmployeeWelcomeAckForm({ token, onValidityChange, onSubmitted }, ref) {
 
           <div>
             <label className="block text-[12pt] mb-1" htmlFor="fullName">Name</label>
-            <input id="fullName" title="Full Name" placeholder="Full Name" className="w-full border-b border-black/60 px-1 py-2" value={data.fullName} onChange={(e)=>handleChange('fullName', e.target.value)} />
+            {dataLoading ? (
+              <div className="w-full border-b border-black/60 px-1 py-2 flex items-center">
+                <div className="animate-pulse bg-gray-200 h-4 w-32 rounded"></div>
+                <span className="ml-2 text-gray-500 text-sm">Loading...</span>
+              </div>
+            ) : (
+              <input 
+                id="fullName" 
+                title="Full Name" 
+                placeholder="Full Name" 
+                className="w-full border-b border-black/60 px-1 py-2" 
+                value={data.fullName} 
+                onChange={(e)=>handleChange('fullName', e.target.value)} 
+              />
+            )}
           </div>
           <div className="mb-8">
             <label className="block text-[12pt] mb-2" htmlFor="signature">Signature</label>

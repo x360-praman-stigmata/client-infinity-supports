@@ -2,12 +2,20 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import EmployeeWelcomeAckView from './lastPageOnlyView';
+import FormDownloadButton from '@/components/ui/FormDownloadButton';
 
-export default function EmployeeWelcomeView({ excludeLastPage = false, children, data = {} }: { excludeLastPage?: boolean; children?: React.ReactNode; data?: any }) {
+export default function EmployeeWelcomeView({ excludeLastPage = true, children, data = {} }: { excludeLastPage?: boolean; children?: React.ReactNode; data?: any }) {
   const pdfContainerRef = useRef<HTMLDivElement>(null);
   const hasRenderedRef = useRef(false);
   const [isRendering, setIsRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if form is complete (has all required fields and is submitted)
+  const isFormComplete = data.readAcknowledgement && 
+                        data.fullName && 
+                        data.signature && 
+                        data.date &&
+                        data.submit === true;
 
   useEffect(() => {
     // Render the PDF into canvases without the built-in viewer
@@ -90,12 +98,34 @@ export default function EmployeeWelcomeView({ excludeLastPage = false, children,
     });
   }
 
+  // If form is complete, show only the acknowledgement form with download button
+  if (isFormComplete) {
+    return (
+      <div className="bg-slate-50 py-8">
+        <div className="bg-white w-full max-w-[900px] mx-auto rounded-xl shadow border p-4">
+          {/* Download Button for Completed Form */}
+          <FormDownloadButton
+            pdfUrl="/stafForms/Employee%20Welcome%20Pack.pdf"
+            fileName="Employee Welcome Pack.pdf"
+            formName="Employee Welcome Pack"
+            description="Download the complete document for your records"
+          />
+          
+          <EmployeeWelcomeAckView data={data} />
+          {error && (
+            <div className="text-sm text-red-600 mt-2">{error}</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // If form is not complete, show PDF only (no acknowledgement form)
   return (
     <div className="bg-slate-50 py-8">
       <div className="bg-white w-full max-w-[900px] mx-auto rounded-xl shadow border p-4">
         <div ref={pdfContainerRef} className="w-full" />
         {children}
-        <EmployeeWelcomeAckView data={data} />
         {error && (
           <div className="text-sm text-red-600 mt-2">{error}</div>
         )}
